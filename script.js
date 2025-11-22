@@ -1,0 +1,575 @@
+// State management
+let projects = [];
+let currentProject = null;
+let timerInterval = null;
+let startTime = null;
+let elapsedTime = 0;
+let isRunning = false;
+
+// DOM elements
+const projectNameInput = document.getElementById('projectName');
+const addProjectBtn = document.getElementById('addProjectBtn');
+const projectsList = document.getElementById('projectsList');
+const timerDisplay = document.getElementById('timerDisplay');
+const currentProjectDisplay = document.getElementById('currentProject');
+const focusBtn = document.getElementById('focusBtn');
+const stopBtn = document.getElementById('stopBtn');
+const timeLog = document.getElementById('timeLog');
+const exportBtn = document.getElementById('exportBtn');
+
+// Load data from localStorage
+function loadData() {
+    const savedProjects = localStorage.getItem('timeTrackerProjects');
+    const savedTimeLog = localStorage.getItem('timeTrackerLog');
+    
+    if (savedProjects) {
+        projects = JSON.parse(savedProjects);
+    }
+    
+    if (savedTimeLog) {
+        const log = JSON.parse(savedTimeLog);
+        displayTimeLog(log);
+    }
+    
+    renderProjects();
+}
+
+// Save data to localStorage
+function saveData() {
+    localStorage.setItem('timeTrackerProjects', JSON.stringify(projects));
+}
+
+// Format time (seconds to HH:MM:SS)
+function formatTime(seconds) {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+// Add project
+function addProject() {
+    const name = projectNameInput.value.trim();
+    if (!name) {
+        alert('Please enter a project name');
+        return;
+    }
+    
+    if (projects.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+        alert('Project already exists');
+        return;
+    }
+    
+    projects.push({
+        id: Date.now(),
+        name: name,
+        totalTime: 0
+    });
+    
+    projectNameInput.value = '';
+    saveData();
+    renderProjects();
+}
+
+// Delete project
+function deleteProject(id, event) {
+    event.stopPropagation();
+    if (confirm('Are you sure you want to delete this project?')) {
+        projects = projects.filter(p => p.id !== id);
+        if (currentProject && currentProject.id === id) {
+            stopTimer();
+            currentProject = null;
+        }
+        saveData();
+        renderProjects();
+        updateTimerUI();
+    }
+}
+
+// Select project
+function selectProject(project) {
+    if (isRunning) {
+        alert('Please stop the current timer before selecting a different project');
+        return;
+    }
+    
+    currentProject = project;
+    elapsedTime = 0;
+    renderProjects();
+    updateTimerUI();
+}
+
+// Render projects list
+function renderProjects() {
+    projectsList.innerHTML = '';
+    
+    if (projects.length === 0) {
+        projectsList.innerHTML = '<p class="empty-log">No projects yet. Add one to get started!</p>';
+        return;
+    }
+    
+    projects.forEach(project => {
+        const projectItem = document.createElement('div');
+        projectItem.className = `project-item ${currentProject && currentProject.id === project.id ? 'active' : ''}`;
+        projectItem.onclick = () => selectProject(project);
+        
+        projectItem.innerHTML = `
+            <span class="project-name">${project.name}</span>
+            <div class="project-actions">
+                <span class="project-time">Total: ${formatTime(project.totalTime)}</span>
+                <button class="btn-reports" onclick="viewReports(${project.id}, event)">Reports</button>
+                <button class="btn-delete" onclick="deleteProject(${project.id}, event)">Delete</button>
+            </div>
+        `;
+        
+        projectsList.appendChild(projectItem);
+    });
+    
+    // Update button states
+    focusBtn.disabled = !currentProject;
+}
+
+// Start timer
+function startTimer() {
+    if (!currentProject) {
+        alert('Please select a project first');
+        return;
+    }
+    
+    if (isRunning) return;
+    
+    isRunning = true;
+    startTime = Date.now() - (elapsedTime * 1000);
+    
+    timerInterval = setInterval(() => {
+        elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+        updateTimerDisplay();
+    }, 1000);
+    
+    focusBtn.textContent = 'Focusing...';
+    focusBtn.classList.add('active');
+    focusBtn.disabled = true;
+    stopBtn.disabled = false;
+    
+    updateTimerUI();
+}
+
+// Stop timer
+function stopTimer() {
+    if (!isRunning) return;
+    
+    isRunning = false;
+    clearInterval(timerInterval);
+    
+    if (currentProject && elapsedTime > 0) {
+        // Add time to project
+        currentProject.totalTime += elapsedTime;
+        saveData();
+        
+        // Add to time log
+        addToTimeLog(currentProject.name, elapsedTime);
+        
+        // Reset elapsed time
+        elapsedTime = 0;
+    }
+    
+    focusBtn.textContent = 'Start Focus';
+    focusBtn.classList.remove('active');
+    focusBtn.disabled = !currentProject;
+    stopBtn.disabled = true;
+    
+    updateTimerDisplay();
+    renderProjects();
+}
+
+// Update timer display
+function updateTimerDisplay() {
+    timerDisplay.textContent = formatTime(elapsedTime);
+}
+
+// Update timer UI
+function updateTimerUI() {
+    if (currentProject) {
+        currentProjectDisplay.textContent = currentProject.name;
+    } else {
+        currentProjectDisplay.textContent = 'No project selected';
+    }
+    updateTimerDisplay();
+}
+
+// Add to time log
+function addToTimeLog(projectName, duration) {
+    const today = new Date().toISOString().split('T')[0];
+    let log = JSON.parse(localStorage.getItem('timeTrackerLog') || '[]');
+    
+    // Get today's entries
+    let todayLog = log.filter(entry => entry.date === today) || [];
+    
+    // Add new entry
+    const entry = {
+        date: today,
+        project: projectName,
+        duration: duration,
+        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+    };
+    
+    todayLog.push(entry);
+    
+    // Update log (keep only last 30 days)
+    log = log.filter(entry => {
+        const entryDate = new Date(entry.date);
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        return entryDate >= thirtyDaysAgo;
+    });
+    
+    // Replace today's entries
+    log = log.filter(entry => entry.date !== today);
+    log = log.concat(todayLog);
+    
+    localStorage.setItem('timeTrackerLog', JSON.stringify(log));
+    displayTimeLog(log);
+}
+
+// Display time log
+function displayTimeLog(log) {
+    const today = new Date().toISOString().split('T')[0];
+    const todayEntries = log.filter(entry => entry.date === today);
+    
+    timeLog.innerHTML = '';
+    
+    if (todayEntries.length === 0) {
+        timeLog.innerHTML = '<p class="empty-log">No time logged today yet</p>';
+        return;
+    }
+    
+    // Group entries by project and sum durations
+    const projectTotals = {};
+    todayEntries.forEach(entry => {
+        if (!projectTotals[entry.project]) {
+            projectTotals[entry.project] = 0;
+        }
+        projectTotals[entry.project] += entry.duration;
+    });
+    
+    // Convert to array and sort by duration (highest first)
+    const projectSummary = Object.entries(projectTotals)
+        .map(([project, total]) => ({ project, total }))
+        .sort((a, b) => b.total - a.total);
+    
+    // Display summary
+    projectSummary.forEach(({ project, total }) => {
+        const logEntry = document.createElement('div');
+        logEntry.className = 'log-entry';
+        logEntry.innerHTML = `
+            <div class="log-entry-info">
+                <span class="log-project-name">${project}</span>
+            </div>
+            <span class="log-duration">${formatTime(total)}</span>
+        `;
+        timeLog.appendChild(logEntry);
+    });
+}
+
+// Chart instances
+let barChartInstance = null;
+let currentPeriod = 'daily';
+let currentProjectForReports = null;
+
+// Get project data for charts
+function getProjectData(projectId, period) {
+    const log = JSON.parse(localStorage.getItem('timeTrackerLog') || '[]');
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return { labels: [], data: [] };
+    
+    const projectEntries = log.filter(entry => entry.project === project.name);
+    
+    let aggregated = {};
+    
+    projectEntries.forEach(entry => {
+        const entryDate = new Date(entry.date + 'T00:00:00');
+        let key;
+        
+        if (period === 'daily') {
+            key = entryDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        } else if (period === 'weekly') {
+            const weekStart = new Date(entryDate);
+            weekStart.setDate(entryDate.getDate() - entryDate.getDay());
+            key = `Week of ${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+        } else if (period === 'monthly') {
+            key = entryDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        }
+        
+        if (!aggregated[key]) {
+            aggregated[key] = 0;
+        }
+        aggregated[key] += entry.duration;
+    });
+    
+    // Sort by date
+    const sortedKeys = Object.keys(aggregated).sort((a, b) => {
+        // Convert labels back to dates for sorting
+        const dateA = new Date(a.includes('Week') ? a.split('Week of ')[1] : a);
+        const dateB = new Date(b.includes('Week') ? b.split('Week of ')[1] : b);
+        return dateA - dateB;
+    });
+    
+    const labels = sortedKeys;
+    const data = sortedKeys.map(key => aggregated[key]);
+    
+    return { labels, data };
+}
+
+// Create or update charts
+function updateCharts(projectId, period) {
+    const { labels, data } = getProjectData(projectId, period);
+    
+    // Ensure chart container exists
+    let barContainer = document.getElementById('barChart');
+    
+    if (!barContainer) {
+        // Restore container if it was removed
+        const chartSections = document.querySelectorAll('.chart-section');
+        if (chartSections.length >= 1) {
+            chartSections[0].innerHTML = '<h3>Time Spent</h3><canvas id="barChart"></canvas>';
+            barContainer = document.getElementById('barChart');
+        }
+    }
+    
+    if (labels.length === 0) {
+        // Show message if no data
+        if (barChartInstance) {
+            barChartInstance.destroy();
+            barChartInstance = null;
+        }
+        if (barContainer) {
+            barContainer.parentElement.innerHTML = '<h3>Time Spent</h3><p class="empty-log">No data available for this period</p>';
+        }
+        return;
+    }
+    
+    // Convert seconds to hours for better readability
+    const dataInHours = data.map(seconds => (seconds / 3600).toFixed(2));
+    
+    // Destroy existing chart
+    if (barChartInstance) barChartInstance.destroy();
+    
+    // Create bar chart
+    const barCtx = document.getElementById('barChart').getContext('2d');
+    barChartInstance = new Chart(barCtx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Time Spent (hours)',
+                data: dataInHours,
+                backgroundColor: 'rgba(102, 126, 234, 0.7)',
+                borderColor: 'rgba(102, 126, 234, 1)',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Time (hours)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return value + 'h';
+                        }
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: period === 'daily' ? 'Day' : period === 'weekly' ? 'Week' : 'Month'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const hours = parseFloat(context.parsed.y);
+                            const minutes = Math.round((hours % 1) * 60);
+                            const wholeHours = Math.floor(hours);
+                            return `${wholeHours}h ${minutes}m (${hours.toFixed(2)}h)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// View reports for a project
+function viewReports(projectId, event) {
+    event.stopPropagation();
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+    
+    currentProjectForReports = project;
+    currentPeriod = 'daily';
+    
+    document.getElementById('modalProjectName').textContent = `${project.name} - Reports`;
+    document.getElementById('reportsModal').style.display = 'block';
+    
+    // Reset tabs
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.period === 'daily') {
+            btn.classList.add('active');
+        }
+    });
+    
+    // Restore chart container
+    const chartSections = document.querySelectorAll('.chart-section');
+    if (chartSections.length > 0 && chartSections[0].querySelector('canvas') === null) {
+        chartSections[0].innerHTML = '<h3>Time Spent</h3><canvas id="barChart"></canvas>';
+    }
+    
+    updateCharts(projectId, 'daily');
+}
+
+// Close modal
+function closeModal() {
+    document.getElementById('reportsModal').style.display = 'none';
+    if (barChartInstance) {
+        barChartInstance.destroy();
+        barChartInstance = null;
+    }
+}
+
+// Handle tab switching
+function switchPeriod(period) {
+    if (!currentProjectForReports) return;
+    
+    currentPeriod = period;
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.period === period) {
+            btn.classList.add('active');
+        }
+    });
+    
+    updateCharts(currentProjectForReports.id, period);
+}
+
+// Export to CSV
+function exportToCSV() {
+    const log = JSON.parse(localStorage.getItem('timeTrackerLog') || '[]');
+    
+    if (log.length === 0) {
+        alert('No data to export');
+        return;
+    }
+    
+    // Sort by date (oldest first) and then by time
+    const sortedLog = [...log].sort((a, b) => {
+        const dateCompare = a.date.localeCompare(b.date);
+        if (dateCompare !== 0) return dateCompare;
+        return a.time.localeCompare(b.time);
+    });
+    
+    // CSV headers
+    const headers = ['Date', 'Project', 'Time', 'Duration (HH:MM:SS)', 'Duration (seconds)'];
+    
+    // Convert to CSV rows
+    const rows = sortedLog.map(entry => {
+        const date = new Date(entry.date + 'T00:00:00').toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: '2-digit', 
+            day: '2-digit' 
+        });
+        const project = `"${entry.project.replace(/"/g, '""')}"`; // Escape quotes in CSV
+        const time = entry.time;
+        const durationFormatted = formatTime(entry.duration);
+        const durationSeconds = entry.duration;
+        
+        return [date, project, time, durationFormatted, durationSeconds].join(',');
+    });
+    
+    // Combine headers and rows
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `time-tracker-export-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Event listeners
+addProjectBtn.addEventListener('click', addProject);
+projectNameInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        addProject();
+    }
+});
+
+focusBtn.addEventListener('click', startTimer);
+stopBtn.addEventListener('click', stopTimer);
+exportBtn.addEventListener('click', exportToCSV);
+
+// Modal event listeners
+document.getElementById('closeModal').addEventListener('click', closeModal);
+document.getElementById('reportsModal').addEventListener('click', (e) => {
+    if (e.target.id === 'reportsModal') {
+        closeModal();
+    }
+});
+
+// Tab button event listeners
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        switchPeriod(btn.dataset.period);
+    });
+});
+
+// Initialize
+loadData();
+
+// Save timer state on page unload
+window.addEventListener('beforeunload', () => {
+    if (isRunning) {
+        // Save current state
+        localStorage.setItem('timeTrackerTimerState', JSON.stringify({
+            projectId: currentProject.id,
+            startTime: startTime,
+            elapsedTime: elapsedTime
+        }));
+    } else {
+        localStorage.removeItem('timeTrackerTimerState');
+    }
+});
+
+// Restore timer state on page load
+window.addEventListener('load', () => {
+    const savedState = localStorage.getItem('timeTrackerTimerState');
+    if (savedState) {
+        const state = JSON.parse(savedState);
+        const project = projects.find(p => p.id === state.projectId);
+        if (project) {
+            currentProject = project;
+            startTime = state.startTime;
+            elapsedTime = state.elapsedTime;
+            startTimer();
+        }
+    }
+});
+

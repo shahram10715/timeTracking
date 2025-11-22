@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⏱️ Time Tracker</h1>
+        </header>
+
+        <main>
+            <!-- Projects Section -->
+            <section class="projects-section">
+                <h2>Projects</h2>
+                <div class="add-project">
+                    <input type="text" id="projectName" placeholder="Enter project name..." maxlength="50">
+                    <button id="addProjectBtn" class="btn btn-primary">Add Project</button>
+                </div>
+                <div id="projectsList" class="projects-list"></div>
+            </section>
+
+            <!-- Timer Section -->
+            <section class="timer-section">
+                <div class="timer-display">
+                    <div class="timer-time" id="timerDisplay">00:00:00</div>
+                    <div class="timer-project" id="currentProject">No project selected</div>
+                </div>
+                <div class="timer-controls">
+                    <button id="focusBtn" class="btn btn-focus" disabled>Start Focus</button>
+                    <button id="stopBtn" class="btn btn-stop" disabled>Stop</button>
+                </div>
+            </section>
+
+            <!-- Time Log Section -->
+            <section class="log-section">
+                <div class="log-header">
+                    <h2>Today's Time Log</h2>
+                    <button id="exportBtn" class="btn btn-export">Export CSV</button>
+                </div>
+                <div id="timeLog" class="time-log"></div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Reports Modal -->
+    <div id="reportsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalProjectName">Project Reports</h2>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="time-period-tabs">
+                    <button class="tab-btn active" data-period="daily">Daily</button>
+                    <button class="tab-btn" data-period="weekly">Weekly</button>
+                    <button class="tab-btn" data-period="monthly">Monthly</button>
+                </div>
+                <div class="charts-container">
+                    <div class="chart-section">
+                        <h3>Time Spent</h3>
+                        <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
