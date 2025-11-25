@@ -247,8 +247,43 @@ section h2 {
     margin-bottom: 20px;
 }
 
+.log-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
 .log-header h2 {
     margin-bottom: 0;
+}
+
+.btn-import {
+    background: #6c757d;
+    color: white;
+    padding: 10px 20px;
+    font-size: 0.9rem;
+}
+
+.btn-import:hover:not(:disabled) {
+    background: #5a6268;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4);
+}
+
+.btn-details {
+    background: #ffb347;
+    color: #333;
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.btn-details:hover:not(:disabled) {
+    background: #ffa726;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 183, 71, 0.4);
 }
 
 .btn-export {
@@ -349,12 +384,23 @@ section h2 {
         gap: 15px;
     }
 
+    .log-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
     .log-header h2 {
         margin-bottom: 0;
     }
 
     .btn-export {
         width: 100%;
+    }
+
+    .log-actions {
+        gap: 8px;
+        flex-direction: column;
+        align-items: stretch;
     }
 }
 
@@ -492,7 +538,72 @@ section h2 {
 }
 
 .btn-reports:hover {
-    background: #5568d3;
+    background: #28a745;
+}
+
+.details-modal-content {
+    max-width: 1000px;
+}
+
+.details-modal-body {
+    max-height: 70vh;
+    overflow: auto;
+}
+
+.details-table-wrapper {
+    width: 100%;
+}
+
+.details-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.details-table thead {
+    background: #f0f2f5;
+}
+
+.details-table th,
+.details-table td {
+    padding: 12px 14px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.details-table tbody tr:nth-child(even) {
+    background: #fafbfc;
+}
+
+.details-table tbody tr:hover {
+    background: #eef2ff;
+}
+
+.btn-delete-entry {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background 0.3s;
+}
+
+.btn-delete-entry:hover {
+    background: #c82333;
+}
+
+#detailsEmptyState {
+    display: none;
+}
+
+.details-table-wrapper.empty .details-table {
+    display: none;
+}
+
+.details-table-wrapper.empty #detailsEmptyState {
+    display: block;
 }
 
 @media (max-width: 768px) {
