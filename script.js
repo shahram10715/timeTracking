@@ -16,20 +16,25 @@ const focusBtn = document.getElementById('focusBtn');
 const stopBtn = document.getElementById('stopBtn');
 const timeLog = document.getElementById('timeLog');
 const exportBtn = document.getElementById('exportBtn');
+const importBtn = document.getElementById('importBtn');
+const importFileInput = document.getElementById('importFile');
+const detailsBtn = document.getElementById('detailsBtn');
+const detailsModal = document.getElementById('detailsModal');
+const closeDetailsBtn = document.getElementById('closeDetails');
+const detailsWrapper = document.getElementById('detailsWrapper');
+const detailsTableBody = document.getElementById('detailsTableBody');
+const detailsEmptyState = document.getElementById('detailsEmptyState');
 
 // Load data from localStorage
 function loadData() {
     const savedProjects = localStorage.getItem('timeTrackerProjects');
-    const savedTimeLog = localStorage.getItem('timeTrackerLog');
-    
+
     if (savedProjects) {
         projects = JSON.parse(savedProjects);
     }
     
-    if (savedTimeLog) {
-        const log = JSON.parse(savedTimeLog);
-        displayTimeLog(log);
-    }
+    const log = getLogEntries();
+    displayTimeLog(log);
     
     renderProjects();
 }
@@ -45,6 +50,40 @@ function formatTime(seconds) {
     const mins = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
     return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+function formatEntryDate(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString + 'T00:00:00');
+    if (isNaN(date)) return dateString;
+    return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+}
+
+function generateEntryId() {
+    return `entry_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
+}
+
+function getLogEntries() {
+    let log = JSON.parse(localStorage.getItem('timeTrackerLog') || '[]');
+    let needsSave = false;
+    
+    log = log.map(entry => {
+        if (!entry.id) {
+            entry.id = generateEntryId();
+            needsSave = true;
+        }
+        return entry;
+    });
+    
+    if (needsSave) {
+        localStorage.setItem('timeTrackerLog', JSON.stringify(log));
+    }
+    
+    return log;
 }
 
 // Add project
@@ -200,32 +239,24 @@ function updateTimerUI() {
 // Add to time log
 function addToTimeLog(projectName, duration) {
     const today = new Date().toISOString().split('T')[0];
-    let log = JSON.parse(localStorage.getItem('timeTrackerLog') || '[]');
+    let log = getLogEntries();
     
-    // Get today's entries
-    let todayLog = log.filter(entry => entry.date === today) || [];
-    
-    // Add new entry
     const entry = {
+        id: generateEntryId(),
         date: today,
         project: projectName,
         duration: duration,
         time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
     };
     
-    todayLog.push(entry);
+    log.push(entry);
     
-    // Update log (keep only last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     log = log.filter(entry => {
         const entryDate = new Date(entry.date);
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
         return entryDate >= thirtyDaysAgo;
     });
-    
-    // Replace today's entries
-    log = log.filter(entry => entry.date !== today);
-    log = log.concat(todayLog);
     
     localStorage.setItem('timeTrackerLog', JSON.stringify(log));
     displayTimeLog(log);
@@ -284,20 +315,31 @@ function getProjectData(projectId, period) {
     
     const projectEntries = log.filter(entry => entry.project === project.name);
     
-    let aggregated = {};
+    const aggregated = {};
+    
+    const getWeekStart = (date) => {
+        const weekStart = new Date(date);
+        weekStart.setHours(0, 0, 0, 0);
+        weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+        return weekStart;
+    };
+    
+    const getMonthStart = (date) => {
+        const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+        monthStart.setHours(0, 0, 0, 0);
+        return monthStart;
+    };
     
     projectEntries.forEach(entry => {
         const entryDate = new Date(entry.date + 'T00:00:00');
         let key;
         
         if (period === 'daily') {
-            key = entryDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            key = entryDate.toISOString().split('T')[0];
         } else if (period === 'weekly') {
-            const weekStart = new Date(entryDate);
-            weekStart.setDate(entryDate.getDate() - entryDate.getDay());
-            key = `Week of ${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+            key = getWeekStart(entryDate).toISOString();
         } else if (period === 'monthly') {
-            key = entryDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+            key = `${entryDate.getFullYear()}-${entryDate.getMonth()}`;
         }
         
         if (!aggregated[key]) {
@@ -306,16 +348,39 @@ function getProjectData(projectId, period) {
         aggregated[key] += entry.duration;
     });
     
-    // Sort by date
-    const sortedKeys = Object.keys(aggregated).sort((a, b) => {
-        // Convert labels back to dates for sorting
-        const dateA = new Date(a.includes('Week') ? a.split('Week of ')[1] : a);
-        const dateB = new Date(b.includes('Week') ? b.split('Week of ')[1] : b);
-        return dateA - dateB;
-    });
+    const periods = [];
     
-    const labels = sortedKeys;
-    const data = sortedKeys.map(key => aggregated[key]);
+    if (period === 'daily') {
+        for (let i = 9; i >= 0; i--) {
+            const date = new Date();
+            date.setHours(0, 0, 0, 0);
+            date.setDate(date.getDate() - i);
+            const key = date.toISOString().split('T')[0];
+            const label = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            periods.push({ key, label });
+        }
+    } else if (period === 'weekly') {
+        let currentWeekStart = getWeekStart(new Date());
+        for (let i = 9; i >= 0; i--) {
+            const weekStart = new Date(currentWeekStart);
+            weekStart.setDate(weekStart.getDate() - (7 * i));
+            const key = weekStart.toISOString();
+            const label = `Week of ${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+            periods.push({ key, label });
+        }
+    } else if (period === 'monthly') {
+        const currentMonthStart = getMonthStart(new Date());
+        for (let i = 9; i >= 0; i--) {
+            const month = new Date(currentMonthStart);
+            month.setMonth(month.getMonth() - i);
+            const key = `${month.getFullYear()}-${month.getMonth()}`;
+            const label = month.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+            periods.push({ key, label });
+        }
+    }
+    
+    const labels = periods.map(periodInfo => periodInfo.label);
+    const data = periods.map(periodInfo => aggregated[periodInfo.key] || 0);
     
     return { labels, data };
 }
@@ -514,6 +579,243 @@ function exportToCSV() {
     document.body.removeChild(link);
 }
 
+// Import from CSV
+function handleImportClick() {
+    importFileInput.click();
+}
+
+function handleImportFileChange(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const csvContent = e.target.result;
+            const rows = parseCSVContent(csvContent);
+            const entries = transformCSVRows(rows);
+            applyImportedEntries(entries);
+        } catch (error) {
+            alert(error.message || 'Failed to import CSV file');
+        } finally {
+            importFileInput.value = '';
+        }
+    };
+    
+    reader.onerror = () => {
+        alert('Unable to read the selected file');
+        importFileInput.value = '';
+    };
+    
+    reader.readAsText(file);
+}
+
+function parseCSVContent(content) {
+    const rows = [];
+    let currentValue = '';
+    let currentRow = [];
+    let insideQuotes = false;
+    
+    for (let i = 0; i < content.length; i++) {
+        const char = content[i];
+        
+        if (char === '"') {
+            if (insideQuotes && content[i + 1] === '"') {
+                currentValue += '"';
+                i++;
+            } else {
+                insideQuotes = !insideQuotes;
+            }
+        } else if (char === ',' && !insideQuotes) {
+            currentRow.push(currentValue);
+            currentValue = '';
+        } else if ((char === '\n' || char === '\r') && !insideQuotes) {
+            if (char === '\r' && content[i + 1] === '\n') {
+                i++;
+            }
+            currentRow.push(currentValue);
+            rows.push(currentRow);
+            currentRow = [];
+            currentValue = '';
+        } else {
+            currentValue += char;
+        }
+    }
+    
+    if (currentValue !== '' || currentRow.length > 0) {
+        currentRow.push(currentValue);
+        rows.push(currentRow);
+    }
+    
+    return rows.filter(row => row.some(cell => cell.trim() !== ''));
+}
+
+function transformCSVRows(rows) {
+    if (rows.length === 0) {
+        throw new Error('CSV file is empty');
+    }
+    
+    const dataRows = rows.slice(1); // Skip header
+    const entries = [];
+    
+    dataRows.forEach(row => {
+        if (row.length < 5) return;
+        
+        const [dateStr, projectNameRaw, timeValue, , durationSecondsStr] = row;
+        if (!dateStr || !projectNameRaw || !durationSecondsStr) return;
+        
+        const parsedDate = new Date(dateStr);
+        if (isNaN(parsedDate)) return;
+        const isoDate = parsedDate.toISOString().split('T')[0];
+        
+        const projectName = projectNameRaw
+            .replace(/^"|"$/g, '')
+            .replace(/""/g, '"')
+            .trim() || 'Imported Project';
+        
+        const durationSeconds = parseInt(durationSecondsStr, 10);
+        if (Number.isNaN(durationSeconds) || durationSeconds <= 0) return;
+        
+        entries.push({
+            id: generateEntryId(),
+            date: isoDate,
+            project: projectName,
+            duration: durationSeconds,
+            time: timeValue || 'Imported'
+        });
+    });
+    
+    if (entries.length === 0) {
+        throw new Error('No valid rows found in the CSV file');
+    }
+    
+    return entries;
+}
+
+function applyImportedEntries(entries) {
+    localStorage.setItem('timeTrackerLog', JSON.stringify(entries));
+    displayTimeLog(entries);
+    
+    const projectTotals = entries.reduce((acc, entry) => {
+        const projectName = entry.project.trim();
+        if (!acc[projectName]) {
+            acc[projectName] = 0;
+        }
+        acc[projectName] += entry.duration;
+        return acc;
+    }, {});
+    
+    const newProjects = Object.entries(projectTotals).map(([projectName, total]) => {
+        const existing = projects.find(p => p.name.toLowerCase() === projectName.toLowerCase());
+        return {
+            id: existing ? existing.id : Date.now() + Math.floor(Math.random() * 1000),
+            name: existing ? existing.name : projectName,
+            totalTime: total
+        };
+    });
+    
+    projects = newProjects;
+    
+    if (currentProject && !projects.some(p => p.id === currentProject.id)) {
+        currentProject = null;
+    }
+    
+    saveData();
+    renderProjects();
+    updateTimerUI();
+    
+    alert(`Successfully imported ${entries.length} entries`);
+}
+
+// Detailed entries view
+function renderDetailsTable(log) {
+    if (!detailsWrapper || !detailsTableBody || !detailsEmptyState) return;
+    
+    detailsTableBody.innerHTML = '';
+    
+    if (!Array.isArray(log) || log.length === 0) {
+        detailsWrapper.classList.add('empty');
+        return;
+    }
+    
+    detailsWrapper.classList.remove('empty');
+    
+    const sortedEntries = [...log].sort((a, b) => {
+        const dateCompare = b.date.localeCompare(a.date);
+        if (dateCompare !== 0) return dateCompare;
+        return (b.time || '').localeCompare(a.time || '');
+    });
+    
+    sortedEntries.forEach(entry => {
+        const row = document.createElement('tr');
+        
+        const dateCell = document.createElement('td');
+        dateCell.textContent = formatEntryDate(entry.date);
+        
+        const timeCell = document.createElement('td');
+        timeCell.textContent = entry.time || 'N/A';
+        
+        const projectCell = document.createElement('td');
+        projectCell.textContent = entry.project;
+        
+        const durationCell = document.createElement('td');
+        durationCell.textContent = formatTime(entry.duration);
+        
+        const actionCell = document.createElement('td');
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn-delete-entry';
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.addEventListener('click', () => deleteLogEntry(entry.id));
+        actionCell.appendChild(deleteBtn);
+        
+        row.appendChild(dateCell);
+        row.appendChild(timeCell);
+        row.appendChild(projectCell);
+        row.appendChild(durationCell);
+        row.appendChild(actionCell);
+        
+        detailsTableBody.appendChild(row);
+    });
+}
+
+function openDetailsModal() {
+    if (!detailsModal) return;
+    const log = getLogEntries();
+    renderDetailsTable(log);
+    detailsModal.style.display = 'block';
+}
+
+function closeDetailsModal() {
+    if (detailsModal) {
+        detailsModal.style.display = 'none';
+    }
+}
+
+function deleteLogEntry(entryId) {
+    if (!entryId) return;
+    if (!confirm('Delete this entry?')) return;
+    
+    let log = getLogEntries();
+    const entryIndex = log.findIndex(entry => entry.id === entryId);
+    if (entryIndex === -1) return;
+    
+    const [removedEntry] = log.splice(entryIndex, 1);
+    localStorage.setItem('timeTrackerLog', JSON.stringify(log));
+    displayTimeLog(log);
+    
+    if (removedEntry) {
+        const project = projects.find(p => p.name.toLowerCase() === removedEntry.project.toLowerCase());
+        if (project) {
+            project.totalTime = Math.max(0, project.totalTime - removedEntry.duration);
+        }
+    }
+    
+    saveData();
+    renderProjects();
+    updateTimerUI();
+    renderDetailsTable(log);
+}
+
 // Event listeners
 addProjectBtn.addEventListener('click', addProject);
 projectNameInput.addEventListener('keypress', (e) => {
@@ -525,12 +827,21 @@ projectNameInput.addEventListener('keypress', (e) => {
 focusBtn.addEventListener('click', startTimer);
 stopBtn.addEventListener('click', stopTimer);
 exportBtn.addEventListener('click', exportToCSV);
+importBtn.addEventListener('click', handleImportClick);
+importFileInput.addEventListener('change', handleImportFileChange);
+detailsBtn.addEventListener('click', openDetailsModal);
+closeDetailsBtn.addEventListener('click', closeDetailsModal);
 
 // Modal event listeners
 document.getElementById('closeModal').addEventListener('click', closeModal);
 document.getElementById('reportsModal').addEventListener('click', (e) => {
     if (e.target.id === 'reportsModal') {
         closeModal();
+    }
+});
+document.getElementById('detailsModal').addEventListener('click', (e) => {
+    if (e.target.id === 'detailsModal') {
+        closeDetailsModal();
     }
 });
 
