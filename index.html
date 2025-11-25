@@ -40,7 +40,12 @@
             <section class="log-section">
                 <div class="log-header">
                     <h2>Today's Time Log</h2>
-                    <button id="exportBtn" class="btn btn-export">Export CSV</button>
+                    <div class="log-actions">
+                        <button id="detailsBtn" class="btn btn-details">View Details</button>
+                        <button id="importBtn" class="btn btn-import">Import CSV</button>
+                        <button id="exportBtn" class="btn btn-export">Export CSV</button>
+                        <input type="file" id="importFile" accept=".csv,text/csv" hidden>
+                    </div>
                 </div>
                 <div id="timeLog" class="time-log"></div>
             </section>
@@ -65,6 +70,33 @@
                         <h3>Time Spent</h3>
                         <canvas id="barChart"></canvas>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Entries Modal -->
+    <div id="detailsModal" class="modal">
+        <div class="modal-content details-modal-content">
+            <div class="modal-header">
+                <h2>Detailed Focus Entries</h2>
+                <button class="modal-close" id="closeDetails">&times;</button>
+            </div>
+            <div class="modal-body details-modal-body">
+                <div class="details-table-wrapper" id="detailsWrapper">
+                    <table class="details-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Project</th>
+                                <th>Duration</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detailsTableBody"></tbody>
+                    </table>
+                    <p class="empty-log" id="detailsEmptyState">No entries available</p>
                 </div>
             </div>
         </div>
