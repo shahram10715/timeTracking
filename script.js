@@ -52,6 +52,14 @@ function formatTime(seconds) {
     return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 }
 
+function formatHoursMinutesFromSeconds(seconds) {
+    if (!seconds || seconds <= 0) return '0h 0m';
+    const totalMinutes = Math.round(seconds / 60);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours}h ${minutes}m`;
+}
+
 function formatEntryDate(dateString) {
     if (!dateString) return 'N/A';
     const date = new Date(dateString + 'T00:00:00');
@@ -410,28 +418,72 @@ function updateCharts(projectId, period) {
         if (barContainer) {
             barContainer.parentElement.innerHTML = '<h3>Time Spent</h3><p class="empty-log">No data available for this period</p>';
         }
+        if (period === 'daily') {
+            updateDailyAverages(null);
+        }
         return;
     }
     
-    // Convert seconds to hours for better readability
-    const dataInHours = data.map(seconds => (seconds / 3600).toFixed(2));
+    // Convert seconds to hours for better readability (keep as numbers)
+    const dataInHours = data.map(seconds => seconds / 3600);
     
     // Destroy existing chart
     if (barChartInstance) barChartInstance.destroy();
     
+    // Build datasets (bars + optional flat average lines for daily view)
+    const datasets = [{
+        type: 'bar',
+        label: 'Time Spent (hours)',
+        data: dataInHours,
+        backgroundColor: 'rgba(102, 126, 234, 0.7)',
+        borderColor: 'rgba(102, 126, 234, 1)',
+        borderWidth: 2
+    }];
+
+    if (period === 'daily' && data.length > 0) {
+        const totalSecondsAll = data.reduce((sum, value) => sum + value, 0);
+        const avgAllHours = (totalSecondsAll / data.length) / 3600;
+
+        const workingDays = data.filter(value => value > 0);
+        const totalSecondsWorking = workingDays.reduce((sum, value) => sum + value, 0);
+        const avgWorkingHours = workingDays.length > 0
+            ? (totalSecondsWorking / workingDays.length) / 3600
+            : null;
+
+        if (!Number.isNaN(avgAllHours) && avgAllHours > 0) {
+            datasets.push({
+                type: 'line',
+                label: 'Average (all days)',
+                data: labels.map(() => avgAllHours),
+                borderColor: 'rgba(255, 159, 64, 1)',
+                borderWidth: 2,
+                borderDash: [6, 6],
+                pointRadius: 0,
+                pointHitRadius: 0
+            });
+        }
+
+        if (avgWorkingHours && avgWorkingHours > 0) {
+            datasets.push({
+                type: 'line',
+                label: 'Average (working days)',
+                data: labels.map(() => avgWorkingHours),
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 2,
+                borderDash: [2, 4],
+                pointRadius: 0,
+                pointHitRadius: 0
+            });
+        }
+    }
+
     // Create bar chart
     const barCtx = document.getElementById('barChart').getContext('2d');
     barChartInstance = new Chart(barCtx, {
         type: 'bar',
         data: {
             labels: labels,
-            datasets: [{
-                label: 'Time Spent (hours)',
-                data: dataInHours,
-                backgroundColor: 'rgba(102, 126, 234, 0.7)',
-                borderColor: 'rgba(102, 126, 234, 1)',
-                borderWidth: 2
-            }]
+            datasets: datasets
         },
         options: {
             responsive: true,
@@ -458,21 +510,55 @@ function updateCharts(projectId, period) {
             },
             plugins: {
                 legend: {
-                    display: false
+                    display: true
                 },
                 tooltip: {
                     callbacks: {
                         label: function(context) {
                             const hours = parseFloat(context.parsed.y);
+                            if (Number.isNaN(hours)) return '';
                             const minutes = Math.round((hours % 1) * 60);
                             const wholeHours = Math.floor(hours);
-                            return `${wholeHours}h ${minutes}m (${hours.toFixed(2)}h)`;
+                            return `${context.dataset.label}: ${wholeHours}h ${minutes}m (${hours.toFixed(2)}h)`;
                         }
                     }
                 }
             }
         }
     });
+
+    if (period === 'daily') {
+        updateDailyAverages(data);
+    } else {
+        updateDailyAverages(null);
+    }
+}
+
+function updateDailyAverages(data) {
+    const statsContainer = document.getElementById('dailyStats');
+    const avgAllEl = document.getElementById('dailyAverageAllValue');
+    const avgWorkingEl = document.getElementById('dailyAverageWorkingValue');
+
+    if (!statsContainer || !avgAllEl || !avgWorkingEl) return;
+
+    if (!Array.isArray(data) || data.length === 0) {
+        statsContainer.style.display = 'none';
+        return;
+    }
+
+    const totalSecondsAll = data.reduce((sum, value) => sum + value, 0);
+    const avgAllSeconds = totalSecondsAll / data.length;
+
+    const workingDays = data.filter(value => value > 0);
+    const totalSecondsWorking = workingDays.reduce((sum, value) => sum + value, 0);
+    const avgWorkingSeconds = workingDays.length > 0 ? totalSecondsWorking / workingDays.length : 0;
+
+    avgAllEl.textContent = formatHoursMinutesFromSeconds(avgAllSeconds);
+    avgWorkingEl.textContent = workingDays.length > 0
+        ? formatHoursMinutesFromSeconds(avgWorkingSeconds)
+        : 'N/A';
+
+    statsContainer.style.display = 'block';
 }
 
 // View reports for a project
