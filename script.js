@@ -14,16 +14,6 @@ const timerDisplay = document.getElementById('timerDisplay');
 const currentProjectDisplay = document.getElementById('currentProject');
 const focusBtn = document.getElementById('focusBtn');
 const stopBtn = document.getElementById('stopBtn');
-const timeLog = document.getElementById('timeLog');
-const exportBtn = document.getElementById('exportBtn');
-const importBtn = document.getElementById('importBtn');
-const importFileInput = document.getElementById('importFile');
-const detailsBtn = document.getElementById('detailsBtn');
-const detailsModal = document.getElementById('detailsModal');
-const closeDetailsBtn = document.getElementById('closeDetails');
-const detailsWrapper = document.getElementById('detailsWrapper');
-const detailsTableBody = document.getElementById('detailsTableBody');
-const detailsEmptyState = document.getElementById('detailsEmptyState');
 
 // Load data from localStorage
 function loadData() {
@@ -32,10 +22,7 @@ function loadData() {
     if (savedProjects) {
         projects = JSON.parse(savedProjects);
     }
-    
-    const log = getLogEntries();
-    displayTimeLog(log);
-    
+
     renderProjects();
 }
 
@@ -234,10 +221,7 @@ function stopTimer() {
         // Add time to project
         currentProject.totalTime += elapsedTime;
         saveData();
-        
-        // Add to time log
-        addToTimeLog(currentProject.name, elapsedTime);
-        
+
         // Reset elapsed time
         elapsedTime = 0;
     }
@@ -264,72 +248,6 @@ function updateTimerUI() {
         currentProjectDisplay.textContent = 'No project selected';
     }
     updateTimerDisplay();
-}
-
-// Add to time log
-function addToTimeLog(projectName, duration) {
-    const today = new Date().toISOString().split('T')[0];
-    let log = getLogEntries();
-    
-    const entry = {
-        id: generateEntryId(),
-        date: today,
-        project: projectName,
-        duration: duration,
-        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-    };
-    
-    log.push(entry);
-    
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    log = log.filter(entry => {
-        const entryDate = new Date(entry.date);
-        return entryDate >= thirtyDaysAgo;
-    });
-    
-    localStorage.setItem('timeTrackerLog', JSON.stringify(log));
-    displayTimeLog(log);
-}
-
-// Display time log
-function displayTimeLog(log) {
-    const today = new Date().toISOString().split('T')[0];
-    const todayEntries = log.filter(entry => entry.date === today);
-    
-    timeLog.innerHTML = '';
-    
-    if (todayEntries.length === 0) {
-        timeLog.innerHTML = '<p class="empty-log">No time logged today yet</p>';
-        return;
-    }
-    
-    // Group entries by project and sum durations
-    const projectTotals = {};
-    todayEntries.forEach(entry => {
-        if (!projectTotals[entry.project]) {
-            projectTotals[entry.project] = 0;
-        }
-        projectTotals[entry.project] += entry.duration;
-    });
-    
-    // Convert to array and sort by duration (highest first)
-    const projectSummary = Object.entries(projectTotals)
-        .map(([project, total]) => ({ project, total }))
-        .sort((a, b) => b.total - a.total);
-    
-    // Display summary
-    projectSummary.forEach(({ project, total }) => {
-        const logEntry = document.createElement('div');
-        logEntry.className = 'log-entry';
-        logEntry.innerHTML = `
-            <div class="log-entry-info">
-                <span class="log-project-name">${project}</span>
-            </div>
-            <span class="log-duration">${formatTime(total)}</span>
-        `;
-        timeLog.appendChild(logEntry);
-    });
 }
 
 // Chart instances
@@ -636,294 +554,6 @@ function switchPeriod(period) {
     updateCharts(currentProjectForReports.id, period);
 }
 
-// Export to CSV
-function exportToCSV() {
-    const log = JSON.parse(localStorage.getItem('timeTrackerLog') || '[]');
-    
-    if (log.length === 0) {
-        alert('No data to export');
-        return;
-    }
-    
-    // Sort by date (oldest first) and then by time
-    const sortedLog = [...log].sort((a, b) => {
-        const dateCompare = a.date.localeCompare(b.date);
-        if (dateCompare !== 0) return dateCompare;
-        return a.time.localeCompare(b.time);
-    });
-    
-    // CSV headers
-    const headers = ['Date', 'Project', 'Time', 'Duration (HH:MM:SS)', 'Duration (seconds)'];
-    
-    // Convert to CSV rows
-    const rows = sortedLog.map(entry => {
-        const date = new Date(entry.date + 'T00:00:00').toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: '2-digit', 
-            day: '2-digit' 
-        });
-        const project = `"${entry.project.replace(/"/g, '""')}"`; // Escape quotes in CSV
-        const time = entry.time;
-        const durationFormatted = formatTime(entry.duration);
-        const durationSeconds = entry.duration;
-        
-        return [date, project, time, durationFormatted, durationSeconds].join(',');
-    });
-    
-    // Combine headers and rows
-    const csvContent = [headers.join(','), ...rows].join('\n');
-    
-    // Create blob and download
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', `time-tracker-export-${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-// Import from CSV
-function handleImportClick() {
-    importFileInput.click();
-}
-
-function handleImportFileChange(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        try {
-            const csvContent = e.target.result;
-            const rows = parseCSVContent(csvContent);
-            const entries = transformCSVRows(rows);
-            applyImportedEntries(entries);
-        } catch (error) {
-            alert(error.message || 'Failed to import CSV file');
-        } finally {
-            importFileInput.value = '';
-        }
-    };
-    
-    reader.onerror = () => {
-        alert('Unable to read the selected file');
-        importFileInput.value = '';
-    };
-    
-    reader.readAsText(file);
-}
-
-function parseCSVContent(content) {
-    const rows = [];
-    let currentValue = '';
-    let currentRow = [];
-    let insideQuotes = false;
-    
-    for (let i = 0; i < content.length; i++) {
-        const char = content[i];
-        
-        if (char === '"') {
-            if (insideQuotes && content[i + 1] === '"') {
-                currentValue += '"';
-                i++;
-            } else {
-                insideQuotes = !insideQuotes;
-            }
-        } else if (char === ',' && !insideQuotes) {
-            currentRow.push(currentValue);
-            currentValue = '';
-        } else if ((char === '\n' || char === '\r') && !insideQuotes) {
-            if (char === '\r' && content[i + 1] === '\n') {
-                i++;
-            }
-            currentRow.push(currentValue);
-            rows.push(currentRow);
-            currentRow = [];
-            currentValue = '';
-        } else {
-            currentValue += char;
-        }
-    }
-    
-    if (currentValue !== '' || currentRow.length > 0) {
-        currentRow.push(currentValue);
-        rows.push(currentRow);
-    }
-    
-    return rows.filter(row => row.some(cell => cell.trim() !== ''));
-}
-
-function transformCSVRows(rows) {
-    if (rows.length === 0) {
-        throw new Error('CSV file is empty');
-    }
-    
-    const dataRows = rows.slice(1); // Skip header
-    const entries = [];
-    
-    dataRows.forEach(row => {
-        if (row.length < 5) return;
-        
-        const [dateStr, projectNameRaw, timeValue, , durationSecondsStr] = row;
-        if (!dateStr || !projectNameRaw || !durationSecondsStr) return;
-        
-        const parsedDate = new Date(dateStr);
-        if (isNaN(parsedDate)) return;
-        const isoDate = parsedDate.toISOString().split('T')[0];
-        
-        const projectName = projectNameRaw
-            .replace(/^"|"$/g, '')
-            .replace(/""/g, '"')
-            .trim() || 'Imported Project';
-        
-        const durationSeconds = parseInt(durationSecondsStr, 10);
-        if (Number.isNaN(durationSeconds) || durationSeconds <= 0) return;
-        
-        entries.push({
-            id: generateEntryId(),
-            date: isoDate,
-            project: projectName,
-            duration: durationSeconds,
-            time: timeValue || 'Imported'
-        });
-    });
-    
-    if (entries.length === 0) {
-        throw new Error('No valid rows found in the CSV file');
-    }
-    
-    return entries;
-}
-
-function applyImportedEntries(entries) {
-    localStorage.setItem('timeTrackerLog', JSON.stringify(entries));
-    displayTimeLog(entries);
-    
-    const projectTotals = entries.reduce((acc, entry) => {
-        const projectName = entry.project.trim();
-        if (!acc[projectName]) {
-            acc[projectName] = 0;
-        }
-        acc[projectName] += entry.duration;
-        return acc;
-    }, {});
-    
-    const newProjects = Object.entries(projectTotals).map(([projectName, total]) => {
-        const existing = projects.find(p => p.name.toLowerCase() === projectName.toLowerCase());
-        return {
-            id: existing ? existing.id : Date.now() + Math.floor(Math.random() * 1000),
-            name: existing ? existing.name : projectName,
-            totalTime: total
-        };
-    });
-    
-    projects = newProjects;
-    
-    if (currentProject && !projects.some(p => p.id === currentProject.id)) {
-        currentProject = null;
-    }
-    
-    saveData();
-    renderProjects();
-    updateTimerUI();
-    
-    alert(`Successfully imported ${entries.length} entries`);
-}
-
-// Detailed entries view
-function renderDetailsTable(log) {
-    if (!detailsWrapper || !detailsTableBody || !detailsEmptyState) return;
-    
-    detailsTableBody.innerHTML = '';
-    
-    if (!Array.isArray(log) || log.length === 0) {
-        detailsWrapper.classList.add('empty');
-        return;
-    }
-    
-    detailsWrapper.classList.remove('empty');
-    
-    const sortedEntries = [...log].sort((a, b) => {
-        const dateCompare = b.date.localeCompare(a.date);
-        if (dateCompare !== 0) return dateCompare;
-        return (b.time || '').localeCompare(a.time || '');
-    });
-    
-    sortedEntries.forEach(entry => {
-        const row = document.createElement('tr');
-        
-        const dateCell = document.createElement('td');
-        dateCell.textContent = formatEntryDate(entry.date);
-        
-        const timeCell = document.createElement('td');
-        timeCell.textContent = entry.time || 'N/A';
-        
-        const projectCell = document.createElement('td');
-        projectCell.textContent = entry.project;
-        
-        const durationCell = document.createElement('td');
-        durationCell.textContent = formatTime(entry.duration);
-        
-        const actionCell = document.createElement('td');
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'btn-delete-entry';
-        deleteBtn.textContent = 'Delete';
-        deleteBtn.addEventListener('click', () => deleteLogEntry(entry.id));
-        actionCell.appendChild(deleteBtn);
-        
-        row.appendChild(dateCell);
-        row.appendChild(timeCell);
-        row.appendChild(projectCell);
-        row.appendChild(durationCell);
-        row.appendChild(actionCell);
-        
-        detailsTableBody.appendChild(row);
-    });
-}
-
-function openDetailsModal() {
-    if (!detailsModal) return;
-    const log = getLogEntries();
-    renderDetailsTable(log);
-    detailsModal.style.display = 'block';
-}
-
-function closeDetailsModal() {
-    if (detailsModal) {
-        detailsModal.style.display = 'none';
-    }
-}
-
-function deleteLogEntry(entryId) {
-    if (!entryId) return;
-    if (!confirm('Delete this entry?')) return;
-    
-    let log = getLogEntries();
-    const entryIndex = log.findIndex(entry => entry.id === entryId);
-    if (entryIndex === -1) return;
-    
-    const [removedEntry] = log.splice(entryIndex, 1);
-    localStorage.setItem('timeTrackerLog', JSON.stringify(log));
-    displayTimeLog(log);
-    
-    if (removedEntry) {
-        const project = projects.find(p => p.name.toLowerCase() === removedEntry.project.toLowerCase());
-        if (project) {
-            project.totalTime = Math.max(0, project.totalTime - removedEntry.duration);
-        }
-    }
-    
-    saveData();
-    renderProjects();
-    updateTimerUI();
-    renderDetailsTable(log);
-}
-
 // Event listeners
 addProjectBtn.addEventListener('click', addProject);
 projectNameInput.addEventListener('keypress', (e) => {
@@ -934,22 +564,12 @@ projectNameInput.addEventListener('keypress', (e) => {
 
 focusBtn.addEventListener('click', startTimer);
 stopBtn.addEventListener('click', stopTimer);
-exportBtn.addEventListener('click', exportToCSV);
-importBtn.addEventListener('click', handleImportClick);
-importFileInput.addEventListener('change', handleImportFileChange);
-detailsBtn.addEventListener('click', openDetailsModal);
-closeDetailsBtn.addEventListener('click', closeDetailsModal);
 
 // Modal event listeners
 document.getElementById('closeModal').addEventListener('click', closeModal);
 document.getElementById('reportsModal').addEventListener('click', (e) => {
     if (e.target.id === 'reportsModal') {
         closeModal();
-    }
-});
-document.getElementById('detailsModal').addEventListener('click', (e) => {
-    if (e.target.id === 'detailsModal') {
-        closeDetailsModal();
     }
 });
 
