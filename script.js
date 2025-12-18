@@ -14,6 +14,11 @@ const timerDisplay = document.getElementById('timerDisplay');
 const currentProjectDisplay = document.getElementById('currentProject');
 const focusBtn = document.getElementById('focusBtn');
 const stopBtn = document.getElementById('stopBtn');
+const detailsModal = document.getElementById('detailsModal');
+const closeDetailsBtn = document.getElementById('closeDetails');
+const detailsWrapper = document.getElementById('detailsWrapper');
+const detailsTableBody = document.getElementById('detailsTableBody');
+const detailsEmptyState = document.getElementById('detailsEmptyState');
 
 // Load data from localStorage
 function loadData() {
@@ -184,6 +189,7 @@ function renderProjects() {
             <span class="project-name">${project.name}</span>
             <div class="project-actions">
                 <span class="project-time">Today: ${todayLabel} &nbsp;|&nbsp; Avg: ${averagePerWorkingDayLabel} &nbsp;|&nbsp; Total: ${formatTime(project.totalTime)}</span>
+                <button class="btn-details" onclick="openDetailsModalForProject(${project.id}, event)">Details</button>
                 <button class="btn-reports" onclick="viewReports(${project.id}, event)">Reports</button>
                 <button class="btn-delete" onclick="deleteProject(${project.id}, event)">Delete</button>
             </div>
@@ -233,6 +239,9 @@ function stopTimer() {
         currentProject.totalTime += elapsedTime;
         saveData();
 
+        // Add to log for detailed view and reports
+        addToTimeLog(currentProject.name, elapsedTime);
+
         // Reset elapsed time
         elapsedTime = 0;
     }
@@ -261,10 +270,36 @@ function updateTimerUI() {
     updateTimerDisplay();
 }
 
+// Add entry to time log (no on-page "today" summary UI)
+function addToTimeLog(projectName, duration) {
+    const today = new Date().toISOString().split('T')[0];
+    let log = getLogEntries();
+
+    const entry = {
+        id: generateEntryId(),
+        date: today,
+        project: projectName,
+        duration: duration,
+        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+    };
+
+    log.push(entry);
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    log = log.filter(e => {
+        const entryDate = new Date(e.date);
+        return entryDate >= thirtyDaysAgo;
+    });
+
+    localStorage.setItem('timeTrackerLog', JSON.stringify(log));
+}
+
 // Chart instances
 let barChartInstance = null;
 let currentPeriod = 'daily';
 let currentProjectForReports = null;
+let currentProjectForDetails = null;
 
 // Get project data for charts
 function getProjectData(projectId, period) {
@@ -541,6 +576,112 @@ function viewReports(projectId, event) {
     updateCharts(projectId, 'daily');
 }
 
+// Detailed entries table for a project
+function renderDetailsTable(log) {
+    if (!detailsWrapper || !detailsTableBody || !detailsEmptyState) return;
+
+    detailsTableBody.innerHTML = '';
+
+    if (!Array.isArray(log) || log.length === 0) {
+        detailsWrapper.classList.add('empty');
+        return;
+    }
+
+    detailsWrapper.classList.remove('empty');
+
+    const sortedEntries = [...log].sort((a, b) => {
+        const dateCompare = b.date.localeCompare(a.date);
+        if (dateCompare !== 0) return dateCompare;
+        return (b.time || '').localeCompare(a.time || '');
+    });
+
+    sortedEntries.forEach(entry => {
+        const row = document.createElement('tr');
+
+        const dateCell = document.createElement('td');
+        dateCell.textContent = formatEntryDate(entry.date);
+
+        const timeCell = document.createElement('td');
+        timeCell.textContent = entry.time || 'N/A';
+
+        const projectCell = document.createElement('td');
+        projectCell.textContent = entry.project;
+
+        const durationCell = document.createElement('td');
+        durationCell.textContent = formatTime(entry.duration);
+
+        const actionCell = document.createElement('td');
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn-delete-entry';
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.addEventListener('click', () => deleteLogEntry(entry.id));
+        actionCell.appendChild(deleteBtn);
+
+        row.appendChild(dateCell);
+        row.appendChild(timeCell);
+        row.appendChild(projectCell);
+        row.appendChild(durationCell);
+        row.appendChild(actionCell);
+
+        detailsTableBody.appendChild(row);
+    });
+}
+
+function openDetailsModalForProject(projectId, event) {
+    event.stopPropagation();
+    if (!detailsModal) return;
+
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    currentProjectForDetails = project;
+
+    const log = getLogEntries().filter(entry => entry.project === project.name);
+    renderDetailsTable(log);
+
+    const header = detailsModal.querySelector('.modal-header h2');
+    if (header) {
+        header.textContent = `Detailed Focus Entries - ${project.name}`;
+    }
+
+    detailsModal.style.display = 'block';
+}
+
+function closeDetailsModal() {
+    if (detailsModal) {
+        detailsModal.style.display = 'none';
+    }
+}
+
+function deleteLogEntry(entryId) {
+    if (!entryId) return;
+
+    let log = getLogEntries();
+    const entryIndex = log.findIndex(entry => entry.id === entryId);
+    if (entryIndex === -1) return;
+
+    const [removedEntry] = log.splice(entryIndex, 1);
+    localStorage.setItem('timeTrackerLog', JSON.stringify(log));
+
+    if (removedEntry) {
+        const project = projects.find(p => p.name.toLowerCase() === removedEntry.project.toLowerCase());
+        if (project) {
+            project.totalTime = Math.max(0, project.totalTime - removedEntry.duration);
+        }
+    }
+
+    saveData();
+    renderProjects();
+    updateTimerUI();
+
+    if (currentProjectForDetails) {
+        const projectLog = log.filter(entry => entry.project === currentProjectForDetails.name);
+        renderDetailsTable(projectLog);
+    } else {
+        renderDetailsTable(log);
+    }
+}
+
 // Close modal
 function closeModal() {
     document.getElementById('reportsModal').style.display = 'none';
@@ -583,6 +724,18 @@ document.getElementById('reportsModal').addEventListener('click', (e) => {
         closeModal();
     }
 });
+
+if (closeDetailsBtn) {
+    closeDetailsBtn.addEventListener('click', closeDetailsModal);
+}
+
+if (detailsModal) {
+    detailsModal.addEventListener('click', (e) => {
+        if (e.target.id === 'detailsModal') {
+            closeDetailsModal();
+        }
+    });
+}
 
 // Tab button event listeners
 document.querySelectorAll('.tab-btn').forEach(btn => {

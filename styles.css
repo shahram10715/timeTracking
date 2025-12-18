@@ -128,15 +128,17 @@ section h2 {
     background: #dc3545;
     color: white;
     border: none;
-    padding: 6px 12px;
+    padding: 8px 16px;
     border-radius: 6px;
     cursor: pointer;
     font-size: 0.85rem;
-    transition: background 0.3s;
+    transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
 }
 
 .btn-delete:hover {
     background: #c82333;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.35);
 }
 
 /* Timer Section */
@@ -275,9 +277,13 @@ section h2 {
 .btn-details {
     background: #ffb347;
     color: #333;
-    padding: 10px 20px;
-    font-size: 0.9rem;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
     font-weight: 600;
+    transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
 }
 
 .btn-details:hover:not(:disabled) {
@@ -533,12 +539,14 @@ section h2 {
     border-radius: 6px;
     cursor: pointer;
     font-size: 0.85rem;
-    transition: background 0.3s;
+    transition: background 0.3s, transform 0.3s, box-shadow 0.3s;
     margin-right: 10px;
 }
 
 .btn-reports:hover {
-    background: #28a745;
+    background: #218838;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.35);
 }
 
 .details-modal-content {
