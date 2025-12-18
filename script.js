@@ -155,15 +155,37 @@ function renderProjects() {
         return;
     }
     
+    // Calculate working days per project (days with at least some logged time)
+    const logEntries = getLogEntries();
+    const projectWorkingDaysMap = {};
+
+    logEntries.forEach(entry => {
+        if (!entry || !entry.project || !entry.date || !entry.duration || entry.duration <= 0) return;
+        const projectName = entry.project;
+        if (!projectWorkingDaysMap[projectName]) {
+            projectWorkingDaysMap[projectName] = new Set();
+        }
+        projectWorkingDaysMap[projectName].add(entry.date);
+    });
+    
     projects.forEach(project => {
         const projectItem = document.createElement('div');
         projectItem.className = `project-item ${currentProject && currentProject.id === project.id ? 'active' : ''}`;
         projectItem.onclick = () => selectProject(project);
+
+        const workingDaysSet = projectWorkingDaysMap[project.name] || new Set();
+        const workingDaysCount = workingDaysSet.size;
+        const averagePerWorkingDaySeconds = workingDaysCount > 0
+            ? project.totalTime / workingDaysCount
+            : 0;
+        const averagePerWorkingDayLabel = workingDaysCount > 0
+            ? formatHoursMinutesFromSeconds(averagePerWorkingDaySeconds)
+            : '0h 0m';
         
         projectItem.innerHTML = `
             <span class="project-name">${project.name}</span>
             <div class="project-actions">
-                <span class="project-time">Total: ${formatTime(project.totalTime)}</span>
+                <span class="project-time">Avg: ${averagePerWorkingDayLabel} &nbsp;|&nbsp; Total: ${formatTime(project.totalTime)}</span>
                 <button class="btn-reports" onclick="viewReports(${project.id}, event)">Reports</button>
                 <button class="btn-delete" onclick="deleteProject(${project.id}, event)">Delete</button>
             </div>
