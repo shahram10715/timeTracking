@@ -14,6 +14,9 @@ const timerDisplay = document.getElementById('timerDisplay');
 const currentProjectDisplay = document.getElementById('currentProject');
 const focusBtn = document.getElementById('focusBtn');
 const stopBtn = document.getElementById('stopBtn');
+const detailsBtn = document.getElementById('detailsBtn');
+const reportsBtn = document.getElementById('reportsBtn');
+const deleteBtn = document.getElementById('deleteBtn');
 const detailsModal = document.getElementById('detailsModal');
 const closeDetailsBtn = document.getElementById('closeDetails');
 const detailsWrapper = document.getElementById('detailsWrapper');
@@ -29,6 +32,7 @@ function loadData() {
     }
 
     renderProjects();
+    updateGlobalActionButtons();
 }
 
 // Save data to localStorage
@@ -108,20 +112,22 @@ function addProject() {
     projectNameInput.value = '';
     saveData();
     renderProjects();
+    updateGlobalActionButtons();
 }
 
 // Delete project
-function deleteProject(id, event) {
-    event.stopPropagation();
-    if (confirm('Are you sure you want to delete this project?')) {
-        projects = projects.filter(p => p.id !== id);
-        if (currentProject && currentProject.id === id) {
-            stopTimer();
-            currentProject = null;
-        }
+function deleteProject() {
+    if (!currentProject) return;
+    
+    if (confirm(`Are you sure you want to delete "${currentProject.name}"?`)) {
+        const projectId = currentProject.id;
+        projects = projects.filter(p => p.id !== projectId);
+        stopTimer();
+        currentProject = null;
         saveData();
         renderProjects();
         updateTimerUI();
+        updateGlobalActionButtons();
     }
 }
 
@@ -136,6 +142,7 @@ function selectProject(project) {
     elapsedTime = 0;
     renderProjects();
     updateTimerUI();
+    updateGlobalActionButtons();
 }
 
 // Render projects list
@@ -186,12 +193,9 @@ function renderProjects() {
         const todayLabel = formatHoursMinutesFromSeconds(todaySeconds);
         
         projectItem.innerHTML = `
-            <span class="project-name">${project.name}</span>
-            <div class="project-actions">
+            <div class="project-info">
+                <span class="project-name">${project.name}</span>
                 <span class="project-time">Today: ${todayLabel} &nbsp;|&nbsp; Avg: ${averagePerWorkingDayLabel} &nbsp;|&nbsp; Total: ${formatTime(project.totalTime)}</span>
-                <button class="btn-details" onclick="openDetailsModalForProject(${project.id}, event)">Details</button>
-                <button class="btn-reports" onclick="viewReports(${project.id}, event)">Reports</button>
-                <button class="btn-delete" onclick="deleteProject(${project.id}, event)">Delete</button>
             </div>
         `;
         
@@ -200,6 +204,15 @@ function renderProjects() {
     
     // Update button states
     focusBtn.disabled = !currentProject;
+    updateGlobalActionButtons();
+}
+
+// Update global action buttons state
+function updateGlobalActionButtons() {
+    const hasProject = !!currentProject;
+    detailsBtn.disabled = !hasProject;
+    reportsBtn.disabled = !hasProject;
+    deleteBtn.disabled = !hasProject;
 }
 
 // Start timer
@@ -253,6 +266,7 @@ function stopTimer() {
     
     updateTimerDisplay();
     renderProjects();
+    updateGlobalActionButtons();
 }
 
 // Update timer display
@@ -548,15 +562,13 @@ function updateDailyAverages(data) {
 }
 
 // View reports for a project
-function viewReports(projectId, event) {
-    event.stopPropagation();
-    const project = projects.find(p => p.id === projectId);
-    if (!project) return;
+function viewReports() {
+    if (!currentProject) return;
     
-    currentProjectForReports = project;
+    currentProjectForReports = currentProject;
     currentPeriod = 'daily';
     
-    document.getElementById('modalProjectName').textContent = `${project.name} - Reports`;
+    document.getElementById('modalProjectName').textContent = `${currentProject.name} - Reports`;
     document.getElementById('reportsModal').style.display = 'block';
     
     // Reset tabs
@@ -573,7 +585,7 @@ function viewReports(projectId, event) {
         chartSections[0].innerHTML = '<h3>Time Spent</h3><canvas id="barChart"></canvas>';
     }
     
-    updateCharts(projectId, 'daily');
+    updateCharts(currentProject.id, 'daily');
 }
 
 // Detailed entries table for a project
@@ -627,21 +639,17 @@ function renderDetailsTable(log) {
     });
 }
 
-function openDetailsModalForProject(projectId, event) {
-    event.stopPropagation();
-    if (!detailsModal) return;
+function openDetailsModalForProject() {
+    if (!detailsModal || !currentProject) return;
 
-    const project = projects.find(p => p.id === projectId);
-    if (!project) return;
+    currentProjectForDetails = currentProject;
 
-    currentProjectForDetails = project;
-
-    const log = getLogEntries().filter(entry => entry.project === project.name);
+    const log = getLogEntries().filter(entry => entry.project === currentProject.name);
     renderDetailsTable(log);
 
     const header = detailsModal.querySelector('.modal-header h2');
     if (header) {
-        header.textContent = `Detailed Focus Entries - ${project.name}`;
+        header.textContent = `Detailed Focus Entries - ${currentProject.name}`;
     }
 
     detailsModal.style.display = 'block';
@@ -716,6 +724,11 @@ projectNameInput.addEventListener('keypress', (e) => {
 
 focusBtn.addEventListener('click', startTimer);
 stopBtn.addEventListener('click', stopTimer);
+
+// Global action buttons
+detailsBtn.addEventListener('click', openDetailsModalForProject);
+reportsBtn.addEventListener('click', viewReports);
+deleteBtn.addEventListener('click', deleteProject);
 
 // Modal event listeners
 document.getElementById('closeModal').addEventListener('click', closeModal);

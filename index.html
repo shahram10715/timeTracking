@@ -28,7 +28,23 @@
 
             <!-- Projects Section -->
             <section class="projects-section">
-                <h2>Projects</h2>
+                <div class="projects-header">
+                    <h2>Projects</h2>
+                    <div class="global-actions">
+                        <button id="detailsBtn" class="btn-action btn-details" disabled title="View detailed focus entries">
+                            <span class="btn-icon">📋</span>
+                            <span class="btn-text">Details</span>
+                        </button>
+                        <button id="reportsBtn" class="btn-action btn-reports" disabled title="View analytics and charts">
+                            <span class="btn-icon">📊</span>
+                            <span class="btn-text">Reports</span>
+                        </button>
+                        <button id="deleteBtn" class="btn-action btn-delete" disabled title="Delete selected project">
+                            <span class="btn-icon">🗑️</span>
+                            <span class="btn-text">Delete</span>
+                        </button>
+                    </div>
+                </div>
                 <div class="add-project">
                     <input type="text" id="projectName" placeholder="Enter project name..." maxlength="50">
                     <button id="addProjectBtn" class="btn btn-primary">Add Project</button>
