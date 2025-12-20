@@ -13,7 +13,7 @@ body {
 }
 
 .container {
-    max-width: 900px;
+    max-width: 1400px;
     margin: 0 auto;
 }
 
@@ -29,9 +29,11 @@ header h1 {
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-main {
+.main-layout {
     display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 30px;
+    align-items: start;
 }
 
 section {
@@ -435,6 +437,19 @@ section h2 {
 
 /* Responsive Design */
 @media (max-width: 768px) {
+    .main-layout {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .timer-section {
+        order: -1;
+    }
+
+    .projects-section {
+        order: 1;
+    }
+
     header h1 {
         font-size: 2rem;
     }

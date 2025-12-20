@@ -13,19 +13,7 @@
             <h1>⏱️ Time Tracker</h1>
         </header>
 
-        <main>
-            <!-- Timer Section -->
-            <section class="timer-section">
-                <div class="timer-display">
-                    <div class="timer-time" id="timerDisplay">00:00:00</div>
-                    <div class="timer-project" id="currentProject">No project selected</div>
-                </div>
-                <div class="timer-controls">
-                    <button id="focusBtn" class="btn btn-focus" disabled>Start Focus</button>
-                    <button id="stopBtn" class="btn btn-stop" disabled>Stop</button>
-                </div>
-            </section>
-
+        <main class="main-layout">
             <!-- Projects Section -->
             <section class="projects-section">
                 <div class="projects-header">
@@ -50,6 +38,18 @@
                     <button id="addProjectBtn" class="btn btn-primary">Add Project</button>
                 </div>
                 <div id="projectsList" class="projects-list"></div>
+            </section>
+
+            <!-- Timer Section -->
+            <section class="timer-section">
+                <div class="timer-display">
+                    <div class="timer-time" id="timerDisplay">00:00:00</div>
+                    <div class="timer-project" id="currentProject">No project selected</div>
+                </div>
+                <div class="timer-controls">
+                    <button id="focusBtn" class="btn btn-focus" disabled>Start Focus</button>
+                    <button id="stopBtn" class="btn btn-stop" disabled>Stop</button>
+                </div>
             </section>
 
         </main>
