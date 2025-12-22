@@ -106,7 +106,8 @@ function addProject() {
     projects.push({
         id: Date.now(),
         name: name,
-        totalTime: 0
+        totalTime: 0,
+        startDate: new Date().toISOString().split('T')[0]
     });
     
     projectNameInput.value = '';
@@ -192,10 +193,12 @@ function renderProjects() {
         const todaySeconds = projectTodayTotalsMap[project.name] || 0;
         const todayLabel = formatHoursMinutesFromSeconds(todaySeconds);
         
+        const startDateLabel = project.startDate ? `Started: ${formatEntryDate(project.startDate)} &nbsp;|&nbsp; ` : '';
+        
         projectItem.innerHTML = `
             <div class="project-info">
                 <span class="project-name">${project.name}</span>
-                <span class="project-time">Today: ${todayLabel} &nbsp;|&nbsp; Avg: ${averagePerWorkingDayLabel} &nbsp;|&nbsp; Total: ${formatTime(project.totalTime)}</span>
+                <span class="project-time">${startDateLabel}Today: ${todayLabel} &nbsp;|&nbsp; Avg: ${averagePerWorkingDayLabel} &nbsp;|&nbsp; Total: ${formatTime(project.totalTime)}</span>
             </div>
         `;
         
