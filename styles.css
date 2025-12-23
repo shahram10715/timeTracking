@@ -233,6 +233,36 @@ section h2 {
     color: white;
 }
 
+.btn-archive {
+    background: #6f42c1;
+    color: white;
+}
+
+.btn-archive:hover {
+    background: #5a359a;
+    color: white;
+}
+
+.btn-unarchive {
+    background: #20c997;
+    color: white;
+}
+
+.btn-unarchive:hover {
+    background: #1aa085;
+    color: white;
+}
+
+.btn-archived-view {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-archived-view:hover {
+    background: #5a6268;
+    color: white;
+}
+
 .btn-delete:hover {
     background: #c82333;
     color: white;
@@ -576,6 +606,16 @@ section h2 {
         font-size: 1.2rem;
     }
 
+    .archived-projects-section {
+        margin-top: 20px;
+        padding-top: 15px;
+    }
+
+    .archived-header {
+        font-size: 1rem;
+        margin-bottom: 12px;
+    }
+
     .log-header {
         flex-direction: column;
         align-items: flex-start;
@@ -789,6 +829,67 @@ section h2 {
     display: block;
 }
 
+/* Archived Projects Modal */
+.archived-modal-content {
+    max-width: 600px;
+}
+
+.archived-modal-body {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.archived-projects-modal-list {
+    display: grid;
+    gap: 12px;
+}
+
+.archived-project-modal-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.archived-project-info {
+    flex: 1;
+}
+
+.archived-project-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.archived-project-stats {
+    display: flex;
+    gap: 16px;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.btn-unarchive-modal {
+    background: #20c997;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: background 0.3s;
+    white-space: nowrap;
+}
+
+.btn-unarchive-modal:hover {
+    background: #1aa085;
+}
+
 @media (max-width: 768px) {
     .modal-content {
         width: 95%;
@@ -807,6 +908,21 @@ section h2 {
     .tab-btn {
         flex: 1;
         min-width: 80px;
+    }
+
+    .archived-project-modal-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .archived-project-stats {
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .btn-unarchive-modal {
+        width: 100%;
     }
 }
 

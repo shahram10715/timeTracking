@@ -16,6 +16,7 @@ const focusBtn = document.getElementById('focusBtn');
 const stopBtn = document.getElementById('stopBtn');
 const detailsBtn = document.getElementById('detailsBtn');
 const reportsBtn = document.getElementById('reportsBtn');
+const archiveBtn = document.getElementById('archiveBtn');
 const deleteBtn = document.getElementById('deleteBtn');
 const timerStats = document.getElementById('timerStats');
 const projectStartDate = document.getElementById('projectStartDate');
@@ -27,6 +28,11 @@ const closeDetailsBtn = document.getElementById('closeDetails');
 const detailsWrapper = document.getElementById('detailsWrapper');
 const detailsTableBody = document.getElementById('detailsTableBody');
 const detailsEmptyState = document.getElementById('detailsEmptyState');
+const archivedModal = document.getElementById('archivedModal');
+const closeArchivedBtn = document.getElementById('closeArchived');
+const archivedProjectsList = document.getElementById('archivedProjectsList');
+const archivedEmptyState = document.getElementById('archivedEmptyState');
+const archivedProjectsBtn = document.getElementById('archivedProjectsBtn');
 
 // Load data from localStorage
 function loadData() {
@@ -34,6 +40,11 @@ function loadData() {
 
     if (savedProjects) {
         projects = JSON.parse(savedProjects);
+        // Migrate existing projects to add archived field if missing
+        projects = projects.map(project => ({
+            ...project,
+            archived: project.archived || false
+        }));
     }
 
     renderProjects();
@@ -112,7 +123,8 @@ function addProject() {
         id: Date.now(),
         name: name,
         totalTime: 0,
-        startDate: new Date().toISOString().split('T')[0]
+        startDate: new Date().toISOString().split('T')[0],
+        archived: false
     });
     
     projectNameInput.value = '';
@@ -121,10 +133,39 @@ function addProject() {
     updateGlobalActionButtons();
 }
 
+// Archive project
+function archiveProject() {
+    if (!currentProject) return;
+
+    if (currentProject.archived) {
+        alert('This project is already archived.');
+        return;
+    }
+
+    currentProject.archived = true;
+    stopTimer();
+    currentProject = null;
+    saveData();
+    renderProjects();
+    updateTimerUI();
+    updateGlobalActionButtons();
+}
+
+// Unarchive project (for modal)
+function unarchiveProject(projectId) {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    project.archived = false;
+    saveData();
+    renderProjects();
+    renderArchivedProjectsModal();
+}
+
 // Delete project
 function deleteProject() {
     if (!currentProject) return;
-    
+
     if (confirm(`Are you sure you want to delete "${currentProject.name}"?`)) {
         const projectId = currentProject.id;
         projects = projects.filter(p => p.id !== projectId);
@@ -143,7 +184,7 @@ function selectProject(project) {
         alert('Please stop the current timer before selecting a different project');
         return;
     }
-    
+
     currentProject = project;
     elapsedTime = 0;
     renderProjects();
@@ -154,12 +195,14 @@ function selectProject(project) {
 // Render projects list
 function renderProjects() {
     projectsList.innerHTML = '';
-    
+
     if (projects.length === 0) {
         projectsList.innerHTML = '<p class="empty-log">No projects yet. Add one to get started!</p>';
         return;
     }
-    
+
+    const activeProjects = projects.filter(p => !p.archived);
+
     // Calculate working days per project (days with at least some logged time)
     // and today's total time per project
     const logEntries = getLogEntries();
@@ -182,38 +225,61 @@ function renderProjects() {
             projectTodayTotalsMap[projectName] += entry.duration;
         }
     });
-    
-    projects.forEach(project => {
-        const projectItem = document.createElement('div');
-        projectItem.className = `project-item ${currentProject && currentProject.id === project.id ? 'active' : ''}`;
-        projectItem.onclick = () => selectProject(project);
 
-        projectItem.innerHTML = `
-            <div class="project-info">
-                <span class="project-name">${project.name}</span>
-            </div>
-        `;
+    // Render active projects
+    if (activeProjects.length > 0) {
+        activeProjects.forEach(project => {
+            const projectItem = document.createElement('div');
+            projectItem.className = `project-item ${currentProject && currentProject.id === project.id ? 'active' : ''}`;
+            projectItem.onclick = () => selectProject(project);
 
-        projectsList.appendChild(projectItem);
-    });
-    
+            projectItem.innerHTML = `
+                <div class="project-info">
+                    <span class="project-name">${project.name}</span>
+                </div>
+            `;
+
+            projectsList.appendChild(projectItem);
+        });
+    } else {
+        projectsList.innerHTML = '<p class="empty-log">No active projects. All projects are archived.</p>';
+    }
+
     // Update button states
-    focusBtn.disabled = !currentProject;
+    focusBtn.disabled = !currentProject || (currentProject && currentProject.archived);
     updateGlobalActionButtons();
 }
 
 // Update global action buttons state
 function updateGlobalActionButtons() {
     const hasProject = !!currentProject;
-    detailsBtn.disabled = !hasProject;
-    reportsBtn.disabled = !hasProject;
-    deleteBtn.disabled = !hasProject;
+    const hasActiveProject = hasProject && !currentProject.archived;
+    const hasArchivedProjects = projects.some(p => p.archived);
+
+    detailsBtn.disabled = !hasActiveProject;
+    reportsBtn.disabled = !hasActiveProject;
+    archiveBtn.disabled = !hasActiveProject;
+    deleteBtn.disabled = !hasActiveProject;
+    archivedProjectsBtn.disabled = !hasArchivedProjects;
+
+    // Archive button is always for archiving (not toggling)
+    archiveBtn.innerHTML = `
+        <span class="btn-icon">📦</span>
+        <span class="btn-text">Archive</span>
+    `;
+    archiveBtn.title = 'Archive selected project';
+    archiveBtn.className = 'btn-action btn-archive';
 }
 
 // Start timer
 function startTimer() {
     if (!currentProject) {
         alert('Please select a project first');
+        return;
+    }
+
+    if (currentProject.archived) {
+        alert('Cannot start timer on an archived project. Please unarchive it first.');
         return;
     }
     
@@ -273,7 +339,9 @@ function updateTimerDisplay() {
 // Update timer UI
 function updateTimerUI() {
     if (currentProject) {
-        currentProjectDisplay.textContent = currentProject.name;
+        currentProjectDisplay.textContent = currentProject.archived
+            ? `${currentProject.name} (Archived)`
+            : currentProject.name;
     } else {
         currentProjectDisplay.textContent = 'No project selected';
     }
@@ -743,6 +811,51 @@ function closeModal() {
     }
 }
 
+// Open archived projects modal
+function openArchivedModal() {
+    renderArchivedProjectsModal();
+    archivedModal.style.display = 'block';
+}
+
+// Close archived modal
+function closeArchivedModal() {
+    archivedModal.style.display = 'none';
+}
+
+// Render archived projects in modal
+function renderArchivedProjectsModal() {
+    const archivedProjects = projects.filter(p => p.archived);
+
+    archivedProjectsList.innerHTML = '';
+
+    if (archivedProjects.length === 0) {
+        archivedEmptyState.style.display = 'block';
+        return;
+    }
+
+    archivedEmptyState.style.display = 'none';
+
+    archivedProjects.forEach(project => {
+        const projectItem = document.createElement('div');
+        projectItem.className = 'archived-project-modal-item';
+
+        projectItem.innerHTML = `
+            <div class="archived-project-info">
+                <span class="archived-project-name">${project.name}</span>
+                <div class="archived-project-stats">
+                    <span>Started: ${project.startDate ? formatEntryDate(project.startDate) : 'N/A'}</span>
+                    <span>Total: ${formatTime(project.totalTime)}</span>
+                </div>
+            </div>
+            <button class="btn btn-unarchive-modal" onclick="unarchiveProject(${project.id})">
+                📤 Unarchive
+            </button>
+        `;
+
+        archivedProjectsList.appendChild(projectItem);
+    });
+}
+
 // Handle tab switching
 function switchPeriod(period) {
     if (!currentProjectForReports) return;
@@ -772,6 +885,8 @@ stopBtn.addEventListener('click', stopTimer);
 // Global action buttons
 detailsBtn.addEventListener('click', openDetailsModalForProject);
 reportsBtn.addEventListener('click', viewReports);
+archiveBtn.addEventListener('click', archiveProject);
+archivedProjectsBtn.addEventListener('click', openArchivedModal);
 deleteBtn.addEventListener('click', deleteProject);
 
 // Modal event listeners
@@ -790,6 +905,19 @@ if (detailsModal) {
     detailsModal.addEventListener('click', (e) => {
         if (e.target.id === 'detailsModal') {
             closeDetailsModal();
+        }
+    });
+}
+
+// Archived modal event listeners
+if (closeArchivedBtn) {
+    closeArchivedBtn.addEventListener('click', closeArchivedModal);
+}
+
+if (archivedModal) {
+    archivedModal.addEventListener('click', (e) => {
+        if (e.target.id === 'archivedModal') {
+            closeArchivedModal();
         }
     });
 }

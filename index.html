@@ -28,6 +28,14 @@
                             <span class="btn-icon">📊</span>
                             <span class="btn-text">Reports</span>
                         </button>
+                        <button id="archiveBtn" class="btn-action btn-archive" disabled title="Archive selected project">
+                            <span class="btn-icon">📦</span>
+                            <span class="btn-text">Archive</span>
+                        </button>
+                        <button id="archivedProjectsBtn" class="btn-action btn-archived-view" title="View archived projects">
+                            <span class="btn-icon">📁</span>
+                            <span class="btn-text">Archived</span>
+                        </button>
                         <button id="deleteBtn" class="btn-action btn-delete" disabled title="Delete selected project">
                             <span class="btn-icon">🗑️</span>
                             <span class="btn-text">Delete</span>
@@ -127,6 +135,20 @@
                     </table>
                     <p class="empty-log" id="detailsEmptyState">No entries available</p>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Archived Projects Modal -->
+    <div id="archivedModal" class="modal">
+        <div class="modal-content archived-modal-content">
+            <div class="modal-header">
+                <h2>Archived Projects</h2>
+                <button class="modal-close" id="closeArchived">&times;</button>
+            </div>
+            <div class="modal-body archived-modal-body">
+                <div id="archivedProjectsList" class="archived-projects-modal-list"></div>
+                <p class="empty-log" id="archivedEmptyState">No archived projects</p>
             </div>
         </div>
     </div>
