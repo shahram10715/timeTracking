@@ -45,11 +45,31 @@
             <section class="timer-section">
                 <div class="timer-display">
                     <div class="timer-time" id="timerDisplay">00:00:00</div>
-                    <div class="timer-project" id="currentProject">No project selected</div>
                 </div>
                 <div class="timer-controls">
                     <button id="focusBtn" class="btn btn-focus" disabled>Start Focus</button>
                     <button id="stopBtn" class="btn btn-stop" disabled>Stop</button>
+                </div>
+                <div class="timer-display">
+                    <div class="timer-project" id="currentProject">No project selected</div>
+                </div>
+                <div class="timer-stats" id="timerStats">
+                    <div class="timer-stat-item">
+                        <span class="stat-label">Started:</span>
+                        <span class="stat-value" id="projectStartDate">N/A</span>
+                    </div>
+                    <div class="timer-stat-item">
+                        <span class="stat-label">Today:</span>
+                        <span class="stat-value" id="projectToday">0h 0m</span>
+                    </div>
+                    <div class="timer-stat-item">
+                        <span class="stat-label">Avg:</span>
+                        <span class="stat-value" id="projectAvg">0h 0m</span>
+                    </div>
+                    <div class="timer-stat-item">
+                        <span class="stat-label">Total:</span>
+                        <span class="stat-value" id="projectTotal">00:00:00</span>
+                    </div>
                 </div>
             </section>
 

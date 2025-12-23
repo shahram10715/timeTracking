@@ -17,6 +17,11 @@ const stopBtn = document.getElementById('stopBtn');
 const detailsBtn = document.getElementById('detailsBtn');
 const reportsBtn = document.getElementById('reportsBtn');
 const deleteBtn = document.getElementById('deleteBtn');
+const timerStats = document.getElementById('timerStats');
+const projectStartDate = document.getElementById('projectStartDate');
+const projectToday = document.getElementById('projectToday');
+const projectAvg = document.getElementById('projectAvg');
+const projectTotal = document.getElementById('projectTotal');
 const detailsModal = document.getElementById('detailsModal');
 const closeDetailsBtn = document.getElementById('closeDetails');
 const detailsWrapper = document.getElementById('detailsWrapper');
@@ -183,25 +188,12 @@ function renderProjects() {
         projectItem.className = `project-item ${currentProject && currentProject.id === project.id ? 'active' : ''}`;
         projectItem.onclick = () => selectProject(project);
 
-        const workingDaysSet = projectWorkingDaysMap[project.name] || new Set();
-        const workingDaysCount = workingDaysSet.size;
-        const averagePerWorkingDaySeconds = workingDaysCount > 0
-            ? project.totalTime / workingDaysCount
-            : 0;
-        const averagePerWorkingDayLabel = formatHoursMinutesFromSeconds(averagePerWorkingDaySeconds);
-
-        const todaySeconds = projectTodayTotalsMap[project.name] || 0;
-        const todayLabel = formatHoursMinutesFromSeconds(todaySeconds);
-        
-        const startDateLabel = project.startDate ? `Started: ${formatEntryDate(project.startDate)} &nbsp;|&nbsp; ` : '';
-        
         projectItem.innerHTML = `
             <div class="project-info">
                 <span class="project-name">${project.name}</span>
-                <span class="project-time">${startDateLabel}Today: ${todayLabel} &nbsp;|&nbsp; Avg: ${averagePerWorkingDayLabel} &nbsp;|&nbsp; Total: ${formatTime(project.totalTime)}</span>
             </div>
         `;
-        
+
         projectsList.appendChild(projectItem);
     });
     
@@ -261,13 +253,14 @@ function stopTimer() {
         // Reset elapsed time
         elapsedTime = 0;
     }
-    
+
     focusBtn.textContent = 'Start Focus';
     focusBtn.classList.remove('active');
     focusBtn.disabled = !currentProject;
     stopBtn.disabled = true;
-    
+
     updateTimerDisplay();
+    updateTimerUI(); // Update timer stats after stopping
     renderProjects();
     updateGlobalActionButtons();
 }
@@ -284,7 +277,55 @@ function updateTimerUI() {
     } else {
         currentProjectDisplay.textContent = 'No project selected';
     }
+    updateTimerStats();
+    timerStats.style.display = 'block';
     updateTimerDisplay();
+}
+
+// Update timer statistics for current project
+function updateTimerStats() {
+    if (!currentProject) {
+        // Show placeholder values when no project is selected
+        projectStartDate.textContent = 'Select a project';
+        projectToday.textContent = '0h 0m';
+        projectAvg.textContent = '0h 0m';
+        projectTotal.textContent = '00:00:00';
+        return;
+    }
+
+    // Update start date
+    projectStartDate.textContent = currentProject.startDate ? formatEntryDate(currentProject.startDate) : 'N/A';
+
+    // Update total time
+    projectTotal.textContent = formatTime(currentProject.totalTime);
+
+    // Calculate today's time and average
+    const logEntries = getLogEntries();
+    const todayIso = new Date().toISOString().split('T')[0];
+
+    // Today's total for current project
+    const todayEntries = logEntries.filter(entry =>
+        entry.project === currentProject.name && entry.date === todayIso
+    );
+    const todaySeconds = todayEntries.reduce((sum, entry) => sum + entry.duration, 0);
+    projectToday.textContent = formatHoursMinutesFromSeconds(todaySeconds);
+
+    // Average per working day for current project
+    const projectWorkingDaysMap = {};
+    logEntries.forEach(entry => {
+        if (entry.project === currentProject.name) {
+            if (!projectWorkingDaysMap[entry.date]) {
+                projectWorkingDaysMap[entry.date] = 0;
+            }
+            projectWorkingDaysMap[entry.date] += entry.duration;
+        }
+    });
+
+    const workingDaysCount = Object.keys(projectWorkingDaysMap).length;
+    const averagePerWorkingDaySeconds = workingDaysCount > 0
+        ? currentProject.totalTime / workingDaysCount
+        : 0;
+    projectAvg.textContent = formatHoursMinutesFromSeconds(averagePerWorkingDaySeconds);
 }
 
 // Add entry to time log (no on-page "today" summary UI)
@@ -683,7 +724,7 @@ function deleteLogEntry(entryId) {
 
     saveData();
     renderProjects();
-    updateTimerUI();
+    updateTimerUI(); // Update timer stats after deleting entry
 
     if (currentProjectForDetails) {
         const projectLog = log.filter(entry => entry.project === currentProjectForDetails.name);

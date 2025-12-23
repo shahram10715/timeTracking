@@ -272,6 +272,39 @@ section h2 {
     justify-content: center;
 }
 
+.timer-stats {
+    margin-top: 20px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+}
+
+.timer-stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.timer-stat-item:last-child {
+    border-bottom: none;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 500;
+}
+
+.stat-value {
+    font-size: 0.9rem;
+    color: #333;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
 .btn {
     padding: 14px 28px;
     border: none;
@@ -464,6 +497,26 @@ section h2 {
 
     .timer-controls {
         flex-direction: column;
+    }
+
+    .timer-stats {
+        margin-top: 15px;
+        padding: 15px;
+    }
+
+    .timer-stat-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+        padding: 10px 0;
+    }
+
+    .stat-label {
+        font-size: 0.8rem;
+    }
+
+    .stat-value {
+        font-size: 0.85rem;
     }
 
     .btn {
