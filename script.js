@@ -357,6 +357,8 @@ function updateTimerStats() {
         projectStartDate.textContent = 'Select a project';
         projectToday.textContent = '0h 0m';
         projectAvg.textContent = '0h 0m';
+        dailyAverageAllValue.textContent = '0h 0m';
+        dailyAverageWorkingValue.textContent = '0h 0m';
         projectTotal.textContent = '00:00:00';
         return;
     }
@@ -394,6 +396,46 @@ function updateTimerStats() {
         ? currentProject.totalTime / workingDaysCount
         : 0;
     projectAvg.textContent = formatHoursMinutesFromSeconds(averagePerWorkingDaySeconds);
+
+    // Calculate last 10 days averages
+    updateDailyAveragesForCurrentProject();
+}
+
+// Update daily averages for current project
+function updateDailyAveragesForCurrentProject() {
+    if (!currentProject) {
+        dailyAverageAllValue.textContent = '0h 0m';
+        dailyAverageWorkingValue.textContent = '0h 0m';
+        return;
+    }
+
+    const log = getLogEntries();
+    const projectEntries = log.filter(entry => entry.project === currentProject.name);
+
+    // Get last 10 days data
+    const last10Days = [];
+    for (let i = 9; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        last10Days.push(dateStr);
+    }
+
+    const last10DaysData = last10Days.map(date => {
+        const entries = projectEntries.filter(entry => entry.date === date);
+        return entries.reduce((sum, entry) => sum + entry.duration, 0);
+    });
+
+    // Calculate averages
+    const totalSecondsAll = last10DaysData.reduce((sum, value) => sum + value, 0);
+    const avgAllSeconds = totalSecondsAll / last10DaysData.length;
+
+    const workingDays = last10DaysData.filter(value => value > 0);
+    const totalSecondsWorking = workingDays.reduce((sum, value) => sum + value, 0);
+    const avgWorkingSeconds = workingDays.length > 0 ? totalSecondsWorking / workingDays.length : 0;
+
+    dailyAverageAllValue.textContent = formatHoursMinutesFromSeconds(avgAllSeconds);
+    dailyAverageWorkingValue.textContent = formatHoursMinutesFromSeconds(avgWorkingSeconds);
 }
 
 // Add entry to time log (no on-page "today" summary UI)
@@ -542,7 +584,7 @@ function updateCharts(projectId, period) {
     // Destroy existing chart
     if (barChartInstance) barChartInstance.destroy();
     
-    // Build datasets (bars + optional flat average lines for daily view)
+    // Build datasets (bars only - averages now shown in main window)
     const datasets = [{
         type: 'bar',
         label: 'Time Spent (hours)',
@@ -551,43 +593,6 @@ function updateCharts(projectId, period) {
         borderColor: 'rgba(102, 126, 234, 1)',
         borderWidth: 2
     }];
-
-    if (period === 'daily' && data.length > 0) {
-        const totalSecondsAll = data.reduce((sum, value) => sum + value, 0);
-        const avgAllHours = (totalSecondsAll / data.length) / 3600;
-
-        const workingDays = data.filter(value => value > 0);
-        const totalSecondsWorking = workingDays.reduce((sum, value) => sum + value, 0);
-        const avgWorkingHours = workingDays.length > 0
-            ? (totalSecondsWorking / workingDays.length) / 3600
-            : null;
-
-        if (!Number.isNaN(avgAllHours) && avgAllHours > 0) {
-            datasets.push({
-                type: 'line',
-                label: 'Average (all days)',
-                data: labels.map(() => avgAllHours),
-                borderColor: 'rgba(255, 159, 64, 1)',
-                borderWidth: 2,
-                borderDash: [6, 6],
-                pointRadius: 0,
-                pointHitRadius: 0
-            });
-        }
-
-        if (avgWorkingHours && avgWorkingHours > 0) {
-            datasets.push({
-                type: 'line',
-                label: 'Average (working days)',
-                data: labels.map(() => avgWorkingHours),
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 2,
-                borderDash: [2, 4],
-                pointRadius: 0,
-                pointHitRadius: 0
-            });
-        }
-    }
 
     // Create bar chart
     const barCtx = document.getElementById('barChart').getContext('2d');
@@ -639,39 +644,8 @@ function updateCharts(projectId, period) {
         }
     });
 
-    if (period === 'daily') {
-        updateDailyAverages(data);
-    } else {
-        updateDailyAverages(null);
-    }
 }
 
-function updateDailyAverages(data) {
-    const statsContainer = document.getElementById('dailyStats');
-    const avgAllEl = document.getElementById('dailyAverageAllValue');
-    const avgWorkingEl = document.getElementById('dailyAverageWorkingValue');
-
-    if (!statsContainer || !avgAllEl || !avgWorkingEl) return;
-
-    if (!Array.isArray(data) || data.length === 0) {
-        statsContainer.style.display = 'none';
-        return;
-    }
-
-    const totalSecondsAll = data.reduce((sum, value) => sum + value, 0);
-    const avgAllSeconds = totalSecondsAll / data.length;
-
-    const workingDays = data.filter(value => value > 0);
-    const totalSecondsWorking = workingDays.reduce((sum, value) => sum + value, 0);
-    const avgWorkingSeconds = workingDays.length > 0 ? totalSecondsWorking / workingDays.length : 0;
-
-    avgAllEl.textContent = formatHoursMinutesFromSeconds(avgAllSeconds);
-    avgWorkingEl.textContent = workingDays.length > 0
-        ? formatHoursMinutesFromSeconds(avgWorkingSeconds)
-        : 'N/A';
-
-    statsContainer.style.display = 'block';
-}
 
 // View reports for a project
 function viewReports() {

@@ -300,35 +300,36 @@ section h2 {
 
 .timer-stats {
     margin-top: 20px;
-    padding: 20px;
+    padding: 16px;
     background: #f8f9fa;
     border-radius: 12px;
     border: 1px solid #e0e0e0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 6px;
 }
 
 .timer-stat-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid #e0e0e0;
-}
-
-.timer-stat-item:last-child {
-    border-bottom: none;
+    padding: 6px 0;
 }
 
 .stat-label {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: #666;
     font-weight: 500;
+    white-space: nowrap;
 }
 
 .stat-value {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: #333;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
+    text-align: right;
+    margin-left: 12px;
 }
 
 .btn {
@@ -532,38 +533,37 @@ section h2 {
 
     .timer-stats {
         margin-top: 12px;
-        padding: 10px;
+        padding: 8px;
         background: rgba(255, 255, 255, 0.9);
         border-radius: 10px;
         border: 1px solid #e0e0e0;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 4px;
     }
 
     .timer-stat-item {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 6px 0;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    }
-
-    .timer-stat-item:last-child {
-        border-bottom: none;
+        padding: 4px 0;
+        font-size: 0.75rem;
     }
 
     .stat-label {
-        font-size: 0.75rem;
         color: #666;
         font-weight: 500;
         flex-shrink: 0;
+        white-space: nowrap;
     }
 
     .stat-value {
-        font-size: 0.8rem;
         color: #333;
         font-weight: 600;
         font-variant-numeric: tabular-nums;
         text-align: right;
         flex: 1;
+        margin-left: 8px;
     }
 
     .btn {

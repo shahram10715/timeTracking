@@ -71,8 +71,16 @@
                         <span class="stat-value" id="projectToday">0h 0m</span>
                     </div>
                     <div class="timer-stat-item">
-                        <span class="stat-label">Avg:</span>
+                        <span class="stat-label">All time average:</span>
                         <span class="stat-value" id="projectAvg">0h 0m</span>
+                    </div>
+                    <div class="timer-stat-item">
+                        <span class="stat-label">Last 10 days avg (all):</span>
+                        <span class="stat-value" id="dailyAverageAllValue">0h 0m</span>
+                    </div>
+                    <div class="timer-stat-item">
+                        <span class="stat-label">Last 10 days avg (working):</span>
+                        <span class="stat-value" id="dailyAverageWorkingValue">0h 0m</span>
                     </div>
                     <div class="timer-stat-item">
                         <span class="stat-label">Total:</span>
@@ -102,11 +110,6 @@
                         <h3>Time Spent</h3>
                         <canvas id="barChart"></canvas>
                     </div>
-                <div class="daily-stats" id="dailyStats" style="display: none;">
-                    <h3>Last 10 Days Averages</h3>
-                    <p><strong>Average (all last 10 days):</strong> <span id="dailyAverageAllValue">0h 0m</span></p>
-                    <p><strong>Average (working days only):</strong> <span id="dailyAverageWorkingValue">0h 0m</span></p>
-                </div>
                 </div>
             </div>
         </div>
