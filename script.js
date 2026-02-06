@@ -11,7 +11,6 @@ const projectNameInput = document.getElementById('projectName');
 const addProjectBtn = document.getElementById('addProjectBtn');
 const projectsList = document.getElementById('projectsList');
 const timerDisplay = document.getElementById('timerDisplay');
-const currentProjectDisplay = document.getElementById('currentProject');
 const focusBtn = document.getElementById('focusBtn');
 const stopBtn = document.getElementById('stopBtn');
 const detailsBtn = document.getElementById('detailsBtn');
@@ -338,13 +337,6 @@ function updateTimerDisplay() {
 
 // Update timer UI
 function updateTimerUI() {
-    if (currentProject) {
-        currentProjectDisplay.textContent = currentProject.archived
-            ? `${currentProject.name} (Archived)`
-            : currentProject.name;
-    } else {
-        currentProjectDisplay.textContent = 'No project selected';
-    }
     updateTimerStats();
     timerStats.style.display = 'block';
     updateTimerDisplay();

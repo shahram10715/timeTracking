@@ -286,11 +286,6 @@ section h2 {
     font-family: 'Courier New', monospace;
 }
 
-.timer-project {
-    font-size: 1.2rem;
-    color: #666;
-    font-weight: 500;
-}
 
 .timer-controls {
     display: flex;
@@ -518,11 +513,6 @@ section h2 {
         font-size: 2.8rem;
     }
 
-    .timer-project {
-        font-size: 1.1rem;
-        margin-bottom: 10px;
-    }
-
     .add-project {
         flex-direction: column;
     }
@@ -587,14 +577,12 @@ section h2 {
 
     .global-actions {
         width: 100%;
-        justify-content: flex-start;
-        flex-wrap: wrap;
+        flex-direction: column;
         gap: 8px;
     }
 
     .global-actions .btn-action {
-        flex: 1;
-        min-width: 0;
+        width: 100%;
         justify-content: center;
     }
 
