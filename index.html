@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Time Tracking</title>
+    <meta name="description" content="Track time spent on projects with focus sessions, reports, and archives.">
+    <title>Time Tracker</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⏱️</text></svg>">
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -11,113 +12,110 @@
 <body>
     <div class="container">
         <header>
-            <h1>⏱️ Time Tracking</h1>
+            <h1>⏱️ Time Tracker</h1>
         </header>
 
         <main class="main-layout">
-            <!-- Projects Section -->
-            <section class="projects-section">
+            <section class="projects-section" aria-labelledby="projects-heading">
                 <div class="projects-header">
-                    <h2>Projects</h2>
-                    <div class="global-actions">
-                        <button id="detailsBtn" class="btn-action btn-details" disabled title="View detailed focus entries">
-                            <span class="btn-icon">📋</span>
+                    <h2 id="projects-heading">Projects</h2>
+                    <div class="global-actions" role="group" aria-label="Project actions">
+                        <button id="detailsBtn" class="btn-action btn-details" disabled title="View detailed focus entries" aria-label="Details">
+                            <span class="btn-icon" aria-hidden="true">📋</span>
                             <span class="btn-text">Details</span>
                         </button>
-                        <button id="reportsBtn" class="btn-action btn-reports" disabled title="View analytics and charts">
-                            <span class="btn-icon">📊</span>
+                        <button id="reportsBtn" class="btn-action btn-reports" disabled title="View analytics and charts" aria-label="Reports">
+                            <span class="btn-icon" aria-hidden="true">📊</span>
                             <span class="btn-text">Reports</span>
                         </button>
-                        <button id="archiveBtn" class="btn-action btn-archive" disabled title="Archive selected project">
-                            <span class="btn-icon">📦</span>
+                        <button id="archiveBtn" class="btn-action btn-archive" disabled title="Archive selected project" aria-label="Archive">
+                            <span class="btn-icon" aria-hidden="true">📦</span>
                             <span class="btn-text">Archive</span>
                         </button>
-                        <button id="archivedProjectsBtn" class="btn-action btn-archived-view" title="View archived projects">
-                            <span class="btn-icon">📁</span>
+                        <button id="archivedProjectsBtn" class="btn-action btn-archived-view" title="View archived projects" aria-label="View archived">
+                            <span class="btn-icon" aria-hidden="true">📁</span>
                             <span class="btn-text">Archived</span>
                         </button>
-                        <button id="deleteBtn" class="btn-action btn-delete" disabled title="Delete selected project">
-                            <span class="btn-icon">🗑️</span>
+                        <button id="deleteBtn" class="btn-action btn-delete" disabled title="Delete selected project" aria-label="Delete">
+                            <span class="btn-icon" aria-hidden="true">🗑️</span>
                             <span class="btn-text">Delete</span>
                         </button>
                     </div>
                 </div>
                 <div class="add-project">
-                    <input type="text" id="projectName" placeholder="Enter project name..." maxlength="50">
+                    <label for="projectName" class="sr-only">New project name</label>
+                    <input type="text" id="projectName" placeholder="Enter project name..." maxlength="50" autocomplete="off">
                     <button id="addProjectBtn" class="btn btn-primary">Add Project</button>
                 </div>
-                <div id="projectsList" class="projects-list"></div>
+                <div id="projectsList" class="projects-list" role="list"></div>
             </section>
 
-            <!-- Timer Section -->
-            <section class="timer-section">
+            <section class="timer-section" aria-labelledby="timer-heading">
+                <h2 id="timer-heading" class="sr-only">Timer</h2>
                 <div class="timer-display">
-                    <div class="timer-time" id="timerDisplay">00:00:00</div>
+                    <div class="timer-time" id="timerDisplay" aria-live="polite" aria-atomic="true">00:00:00</div>
                 </div>
                 <div class="timer-controls">
-                    <button id="focusBtn" class="btn btn-focus" disabled>Start Focus</button>
+                    <button id="focusBtn" class="btn btn-focus" disabled aria-pressed="false">Start Focus</button>
                     <button id="stopBtn" class="btn btn-stop" disabled>Stop</button>
                 </div>
-                <div class="timer-stats" id="timerStats">
-                    <div class="timer-stat-item">
-                        <span class="stat-label">Started:</span>
+                <div class="timer-stats" id="timerStats" aria-label="Project statistics">
+                    <div class="timer-stat-row">
+                        <span class="stat-label">Started</span>
                         <span class="stat-value" id="projectStartDate">N/A</span>
                     </div>
-                    <div class="timer-stat-item">
-                        <span class="stat-label">Today:</span>
+                    <div class="timer-stat-row">
+                        <span class="stat-label">Today</span>
                         <span class="stat-value" id="projectToday">0h 0m</span>
                     </div>
-                    <div class="timer-stat-item">
-                        <span class="stat-label">All time average:</span>
+                    <div class="timer-stat-row">
+                        <span class="stat-label">All time avg</span>
                         <span class="stat-value" id="projectAvg">0h 0m</span>
                     </div>
-                    <div class="timer-stat-item">
-                        <span class="stat-label">Last 10 days avg (all):</span>
+                    <div class="timer-stat-row">
+                        <span class="stat-label">10d avg (all)</span>
                         <span class="stat-value" id="dailyAverageAllValue">0h 0m</span>
                     </div>
-                    <div class="timer-stat-item">
-                        <span class="stat-label">Last 10 days avg (working):</span>
+                    <div class="timer-stat-row">
+                        <span class="stat-label">10d avg (work)</span>
                         <span class="stat-value" id="dailyAverageWorkingValue">0h 0m</span>
                     </div>
-                    <div class="timer-stat-item">
-                        <span class="stat-label">Total:</span>
+                    <div class="timer-stat-row">
+                        <span class="stat-label">Total</span>
                         <span class="stat-value" id="projectTotal">00:00:00</span>
                     </div>
                 </div>
             </section>
-
         </main>
     </div>
 
-    <!-- Reports Modal -->
-    <div id="reportsModal" class="modal">
+    <div id="reportsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalProjectName" aria-hidden="true">
         <div class="modal-content">
             <div class="modal-header">
                 <h2 id="modalProjectName">Project Reports</h2>
-                <button class="modal-close" id="closeModal">&times;</button>
+                <button type="button" class="modal-close" id="closeModal" aria-label="Close">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="time-period-tabs">
-                    <button class="tab-btn active" data-period="daily">Daily</button>
-                    <button class="tab-btn" data-period="weekly">Weekly</button>
-                    <button class="tab-btn" data-period="monthly">Monthly</button>
+                <div class="time-period-tabs" role="tablist">
+                    <button type="button" class="tab-btn active" data-period="daily" role="tab" aria-selected="true">Daily</button>
+                    <button type="button" class="tab-btn" data-period="weekly" role="tab" aria-selected="false">Weekly</button>
+                    <button type="button" class="tab-btn" data-period="monthly" role="tab" aria-selected="false">Monthly</button>
                 </div>
                 <div class="charts-container">
                     <div class="chart-section">
                         <h3>Time Spent</h3>
-                        <canvas id="barChart"></canvas>
+                        <canvas id="barChart" aria-label="Time spent chart"></canvas>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Detailed Entries Modal -->
-    <div id="detailsModal" class="modal">
+    <div id="detailsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="detailsModalTitle" aria-hidden="true">
         <div class="modal-content details-modal-content">
             <div class="modal-header">
-                <h2>Detailed Focus Entries</h2>
-                <button class="modal-close" id="closeDetails">&times;</button>
+                <h2 id="detailsModalTitle">Detailed Focus Entries</h2>
+                <button type="button" class="modal-close" id="closeDetails" aria-label="Close">&times;</button>
             </div>
             <div class="modal-body details-modal-body">
                 <div class="details-table-wrapper" id="detailsWrapper">
@@ -139,12 +137,11 @@
         </div>
     </div>
 
-    <!-- Archived Projects Modal -->
-    <div id="archivedModal" class="modal">
+    <div id="archivedModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="archivedModalTitle" aria-hidden="true">
         <div class="modal-content archived-modal-content">
             <div class="modal-header">
-                <h2>Archived Projects</h2>
-                <button class="modal-close" id="closeArchived">&times;</button>
+                <h2 id="archivedModalTitle">Archived Projects</h2>
+                <button type="button" class="modal-close" id="closeArchived" aria-label="Close">&times;</button>
             </div>
             <div class="modal-body archived-modal-body">
                 <div id="archivedProjectsList" class="archived-projects-modal-list"></div>
