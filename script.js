@@ -267,7 +267,7 @@ function updateTimerUI() {
 }
 
 function updateTimerStats() {
-    const placeholders = { start: 'N/A', time: '0h 0m', total: '00:00:00' };
+    const placeholders = { start: 'N/A', time: '0h 0m', total: '0h 0m' };
     if (!currentProject) {
         if (projectStartDate) projectStartDate.textContent = placeholders.start;
         if (projectToday) projectToday.textContent = placeholders.time;
