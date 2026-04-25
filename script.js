@@ -26,8 +26,6 @@ const projectStartDate = document.getElementById('projectStartDate');
 const projectToday = document.getElementById('projectToday');
 const projectAvg = document.getElementById('projectAvg');
 const projectTotal = document.getElementById('projectTotal');
-const dailyAverageAllValue = document.getElementById('dailyAverageAllValue');
-const dailyAverageWorkingValue = document.getElementById('dailyAverageWorkingValue');
 const detailsModal = document.getElementById('detailsModal');
 const closeDetailsBtn = document.getElementById('closeDetails');
 const detailsWrapper = document.getElementById('detailsWrapper');
@@ -274,8 +272,6 @@ function updateTimerStats() {
         if (projectStartDate) projectStartDate.textContent = placeholders.start;
         if (projectToday) projectToday.textContent = placeholders.time;
         if (projectAvg) projectAvg.textContent = placeholders.time;
-        if (dailyAverageAllValue) dailyAverageAllValue.textContent = placeholders.time;
-        if (dailyAverageWorkingValue) dailyAverageWorkingValue.textContent = placeholders.time;
         if (projectTotal) projectTotal.textContent = placeholders.total;
         return;
     }
@@ -297,33 +293,8 @@ function updateTimerStats() {
     const workingDaysCount = Object.keys(byDate).length;
     const avgSeconds = workingDaysCount > 0 ? currentProject.totalTime / workingDaysCount : 0;
     if (projectAvg) projectAvg.textContent = formatHoursMinutesFromSeconds(avgSeconds);
-    updateDailyAveragesForCurrentProject();
 }
 
-function updateDailyAveragesForCurrentProject() {
-    if (!currentProject) {
-        if (dailyAverageAllValue) dailyAverageAllValue.textContent = '0h 0m';
-        if (dailyAverageWorkingValue) dailyAverageWorkingValue.textContent = '0h 0m';
-        return;
-    }
-    const log = getLogEntries();
-    const projectEntries = log.filter(e => e.project === currentProject.name);
-    const last10Days = [];
-    for (let i = 9; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        last10Days.push(d.toISOString().split('T')[0]);
-    }
-    const data = last10Days.map(date =>
-        projectEntries.filter(e => e.date === date).reduce((s, e) => s + e.duration, 0)
-    );
-    const totalAll = data.reduce((a, b) => a + b, 0);
-    const avgAll = totalAll / data.length;
-    const working = data.filter(v => v > 0);
-    const avgWorking = working.length > 0 ? working.reduce((a, b) => a + b, 0) / working.length : 0;
-    if (dailyAverageAllValue) dailyAverageAllValue.textContent = formatHoursMinutesFromSeconds(avgAll);
-    if (dailyAverageWorkingValue) dailyAverageWorkingValue.textContent = formatHoursMinutesFromSeconds(avgWorking);
-}
 
 // ─── Time log ─────────────────────────────────────────────────────────────
 function addToTimeLog(projectName, duration) {
