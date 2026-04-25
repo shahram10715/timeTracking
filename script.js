@@ -282,7 +282,8 @@ function updateTimerStats() {
     if (projectStartDate) {
         projectStartDate.textContent = currentProject.startDate ? formatEntryDate(currentProject.startDate) : placeholders.start;
     }
-    if (projectTotal) projectTotal.textContent = formatTime(currentProject.totalTime);
+    // Change total format from formatTime to formatHoursMinutesFromSeconds
+    if (projectTotal) projectTotal.textContent = formatHoursMinutesFromSeconds(currentProject.totalTime);
     const logEntries = getLogEntries();
     const todayIso = new Date().toISOString().split('T')[0];
     const todayEntries = logEntries.filter(e => e.project === currentProject.name && e.date === todayIso);
