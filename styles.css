@@ -550,13 +550,7 @@ section h2 {
         gap: 20px;
     }
 
-    .timer-section {
-        order: -1;
-    }
-
-    .projects-section {
-        order: 1;
-    }
+    /* No order overrides needed – timer is first in HTML, so it appears on top naturally */
 
     header h1 {
         font-size: 2rem;
