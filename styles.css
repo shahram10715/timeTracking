@@ -8,10 +8,6 @@
     --color-danger-dark: #c82333;
     --color-warning: #ffb347;
     --color-warning-dark: #ffa726;
-    --color-archive: #6f42c1;
-    --color-archive-dark: #5a359a;
-    --color-unarchive: #20c997;
-    --color-unarchive-dark: #1aa085;
     --color-muted: #6c757d;
     --color-muted-dark: #5a6268;
     --bg-section: #fff;
@@ -217,12 +213,6 @@ section h2 {
 .btn-reports { background: var(--color-success); color: white; }
 .btn-reports:hover:not(:disabled) { background: var(--color-success-dark); }
 
-.btn-archive { background: var(--color-archive); color: white; }
-.btn-archive:hover:not(:disabled) { background: var(--color-archive-dark); }
-
-.btn-archived-view { background: var(--color-muted); color: white; }
-.btn-archived-view:hover:not(:disabled) { background: var(--color-muted-dark); }
-
 .btn-delete { background: var(--color-danger); color: white; }
 .btn-delete:hover:not(:disabled) { background: var(--color-danger-dark); }
 
@@ -249,7 +239,6 @@ section h2 {
     justify-content: center;
 }
 
-/* Timer stats: fixed height rows so layout never jumps */
 .timer-stats {
     margin-top: 20px;
     padding: 16px;
@@ -550,63 +539,6 @@ section h2 {
     display: block;
 }
 
-/* Archived modal */
-.archived-modal-content {
-    max-width: 560px;
-}
-
-.archived-modal-body {
-    max-height: 60vh;
-    overflow-y: auto;
-}
-
-.archived-projects-modal-list {
-    display: grid;
-    gap: 12px;
-}
-
-.archived-project-modal-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px;
-    background: var(--bg-muted);
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border);
-}
-
-.archived-project-name {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text);
-    display: block;
-    margin-bottom: 4px;
-}
-
-.archived-project-stats {
-    display: flex;
-    gap: 16px;
-    font-size: 0.85rem;
-    color: var(--text-muted);
-}
-
-.btn-unarchive-modal {
-    background: var(--color-unarchive);
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 500;
-    transition: background 0.2s;
-    white-space: nowrap;
-}
-
-.btn-unarchive-modal:hover {
-    background: var(--color-unarchive-dark);
-}
-
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
     section {
@@ -699,20 +631,5 @@ section h2 {
     .tab-btn {
         flex: 1;
         min-width: 80px;
-    }
-
-    .archived-project-modal-item {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 12px;
-    }
-
-    .archived-project-stats {
-        flex-direction: column;
-        gap: 4px;
-    }
-
-    .btn-unarchive-modal {
-        width: 100%;
     }
 }

@@ -28,14 +28,6 @@
                             <span class="btn-icon" aria-hidden="true">📊</span>
                             <span class="btn-text">Reports</span>
                         </button>
-                        <button id="archiveBtn" class="btn-action btn-archive" disabled title="Archive selected project" aria-label="Archive">
-                            <span class="btn-icon" aria-hidden="true">📦</span>
-                            <span class="btn-text">Archive</span>
-                        </button>
-                        <button id="archivedProjectsBtn" class="btn-action btn-archived-view" title="View archived projects" aria-label="View archived">
-                            <span class="btn-icon" aria-hidden="true">📁</span>
-                            <span class="btn-text">Archived</span>
-                        </button>
                         <button id="deleteBtn" class="btn-action btn-delete" disabled title="Delete selected project" aria-label="Delete">
                             <span class="btn-icon" aria-hidden="true">🗑️</span>
                             <span class="btn-text">Delete</span>
@@ -125,19 +117,6 @@
                     </table>
                     <p class="empty-log" id="detailsEmptyState">No entries available</p>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="archivedModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="archivedModalTitle" aria-hidden="true">
-        <div class="modal-content archived-modal-content">
-            <div class="modal-header">
-                <h2 id="archivedModalTitle">Archived Projects</h2>
-                <button type="button" class="modal-close" id="closeArchived" aria-label="Close">&times;</button>
-            </div>
-            <div class="modal-body archived-modal-body">
-                <div id="archivedProjectsList" class="archived-projects-modal-list"></div>
-                <p class="empty-log" id="archivedEmptyState">No archived projects</p>
             </div>
         </div>
     </div>
