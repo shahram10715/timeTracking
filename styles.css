@@ -171,6 +171,7 @@ section h2 {
 .btn-action {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     border: none;
     padding: 8px 14px;
@@ -180,11 +181,6 @@ section h2 {
     font-weight: 500;
     transition: transform 0.2s, box-shadow 0.2s;
     white-space: nowrap;
-}
-
-.btn-action .btn-icon {
-    font-size: 1rem;
-    line-height: 1;
 }
 
 .btn-action:hover:not(:disabled) {
@@ -605,12 +601,9 @@ section h2 {
         justify-content: center;
     }
 
+    /* Button text is now always visible, no need to hide it */
     .global-actions .btn-action .btn-text {
-        display: none;
-    }
-
-    .global-actions .btn-action .btn-icon {
-        font-size: 1.2rem;
+        display: inline;
     }
 
     .modal-content {
