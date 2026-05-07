@@ -294,7 +294,7 @@ function getProjectData(projectId, period) {
     });
     const periods = [];
     if (period === 'daily') {
-        for (let i = 9; i >= 0; i--) {
+        for (let i = 13; i >= 0; i--) {
             const d = new Date();
             d.setHours(0, 0, 0, 0);
             d.setDate(d.getDate() - i);
@@ -302,14 +302,14 @@ function getProjectData(projectId, period) {
         }
     } else if (period === 'weekly') {
         const weekStart = getWeekStart(new Date());
-        for (let i = 9; i >= 0; i--) {
+        for (let i = 11; i >= 0; i--) {
             const w = new Date(weekStart);
             w.setDate(w.getDate() - 7 * i);
             periods.push({ key: w.toISOString(), label: `Week of ${w.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` });
         }
     } else {
         const monthStart = getMonthStart(new Date());
-        for (let i = 9; i >= 0; i--) {
+        for (let i = 11; i >= 0; i--) {
             const m = new Date(monthStart);
             m.setMonth(m.getMonth() - i);
             periods.push({ key: `${m.getFullYear()}-${m.getMonth()}`, label: m.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) });
