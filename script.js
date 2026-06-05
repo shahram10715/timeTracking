@@ -10,6 +10,7 @@ let currentPeriod = 'daily';
 let currentProjectForReports = null;
 let currentProjectForDetails = null;
 
+// test comment
 // ─── DOM refs ─────────────────────────────────────────────────────────────
 const projectNameInput = document.getElementById('projectName');
 const addProjectBtn = document.getElementById('addProjectBtn');
