@@ -10,7 +10,6 @@ let currentPeriod = 'daily';
 let currentProjectForReports = null;
 let currentProjectForDetails = null;
 
-// test comment
 // ─── DOM refs ─────────────────────────────────────────────────────────────
 const projectNameInput = document.getElementById('projectName');
 const addProjectBtn = document.getElementById('addProjectBtn');
@@ -243,16 +242,19 @@ function updateTimerStats() {
     const todayEntries = logEntries.filter(e => e.project === currentProject.name && e.date === todayIso);
     const todaySeconds = todayEntries.reduce((s, e) => s + e.duration, 0);
     if (projectToday) projectToday.textContent = formatHoursMinutesFromSeconds(todaySeconds);
+
+    // All-time average: derive BOTH numerator and denominator from the log
+    // so they always cover the same time span (full history, no trimming).
     const byDate = {};
     logEntries.forEach(e => {
         if (e.project !== currentProject.name) return;
         byDate[e.date] = (byDate[e.date] || 0) + e.duration;
     });
     const workingDaysCount = Object.keys(byDate).length;
-    const avgSeconds = workingDaysCount > 0 ? currentProject.totalTime / workingDaysCount : 0;
+    const totalFromLog = Object.values(byDate).reduce((s, v) => s + v, 0);
+    const avgSeconds = workingDaysCount > 0 ? totalFromLog / workingDaysCount : 0;
     if (projectAvg) projectAvg.textContent = formatHoursMinutesFromSeconds(avgSeconds);
 }
-
 
 // ─── Time log ─────────────────────────────────────────────────────────────
 function addToTimeLog(projectName, duration) {
@@ -265,9 +267,7 @@ function addToTimeLog(projectName, duration) {
         duration,
         time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
     });
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 30);
-    log = log.filter(e => new Date(e.date) >= cutoff);
+    // NOTE: No trimming — all entries are kept permanently.
     localStorage.setItem('timeTrackerLog', JSON.stringify(log));
 }
 
