@@ -126,14 +126,54 @@ function selectProject(project) {
     updateGlobalActionButtons();
 }
 
+// Purges a project and ALL data associated with it:
+//   - its log entries (timeTrackerLog)
+//   - any saved timer state for it (timeTrackerTimerState)
+//   - the project record itself (timeTrackerProjects)
 function deleteProject() {
     if (!currentProject) return;
-    if (!confirm(`Are you sure you want to delete "${currentProject.name}"?`)) return;
-    projects = projects.filter(p => p.id !== currentProject.id);
-    stopTimer();
+    const projectName = currentProject.name;
+    const projectId = currentProject.id;
+    if (!confirm(`Are you sure you want to delete "${projectName}"?\n\nThis will permanently remove the project AND all of its focus log entries.`)) return;
+
+    // 1) Stop any running timer first, WITHOUT writing a final log entry,
+    //    so we don't create data we're about to purge.
+    if (isRunning) {
+        isRunning = false;
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+    elapsedTime = 0;
+
+    // 2) Remove all log entries belonging to this project.
+    const log = getLogEntries().filter(e => e.project !== projectName);
+    localStorage.setItem('timeTrackerLog', JSON.stringify(log));
+
+    // 3) Remove any persisted timer state referencing this project.
+    try {
+        const stateRaw = localStorage.getItem('timeTrackerTimerState');
+        if (stateRaw) {
+            const state = JSON.parse(stateRaw);
+            if (state && state.projectId === projectId) {
+                localStorage.removeItem('timeTrackerTimerState');
+            }
+        }
+    } catch (_) {
+        localStorage.removeItem('timeTrackerTimerState');
+    }
+
+    // 4) Remove the project record itself.
+    projects = projects.filter(p => p.id !== projectId);
     currentProject = null;
+
+    // 5) Close any modals that were showing this project's data.
+    closeDetailsModal();
+    closeModal();
+
+    // 6) Persist and refresh UI.
     saveData();
     renderProjects();
+    updateTimerDisplay();
     updateTimerUI();
     updateGlobalActionButtons();
 }
@@ -197,6 +237,7 @@ function stopTimer() {
     if (!isRunning) return;
     isRunning = false;
     clearInterval(timerInterval);
+    timerInterval = null;
     if (currentProject && elapsedTime > 0) {
         currentProject.totalTime += elapsedTime;
         saveData();
@@ -420,6 +461,7 @@ function closeModal() {
         barChartInstance.destroy();
         barChartInstance = null;
     }
+    currentProjectForReports = null;
 }
 
 function switchPeriod(period) {
@@ -475,6 +517,7 @@ function closeDetailsModal() {
         detailsModal.style.display = 'none';
         detailsModal.setAttribute('aria-hidden', 'true');
     }
+    currentProjectForDetails = null;
 }
 
 function deleteLogEntry(entryId) {
