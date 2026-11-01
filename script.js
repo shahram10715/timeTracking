@@ -23,6 +23,7 @@ const deleteBtn = document.getElementById('deleteBtn');
 const timerStats = document.getElementById('timerStats');
 const projectStartDate = document.getElementById('projectStartDate');
 const projectToday = document.getElementById('projectToday');
+const projectTotalDays = document.getElementById('projectTotalDays');
 const projectAvg = document.getElementById('projectAvg');
 const projectTotal = document.getElementById('projectTotal');
 const detailsModal = document.getElementById('detailsModal');
@@ -266,10 +267,11 @@ function updateTimerUI() {
 }
 
 function updateTimerStats() {
-    const placeholders = { start: 'N/A', time: '0h 0m', total: '0h 0m' };
+    const placeholders = { start: 'N/A', time: '0h 0m', total: '0h 0m', days: '0' };
     if (!currentProject) {
         if (projectStartDate) projectStartDate.textContent = placeholders.start;
         if (projectToday) projectToday.textContent = placeholders.time;
+        if (projectTotalDays) projectTotalDays.textContent = placeholders.days;
         if (projectAvg) projectAvg.textContent = placeholders.time;
         if (projectTotal) projectTotal.textContent = placeholders.total;
         return;
@@ -295,6 +297,16 @@ function updateTimerStats() {
     const totalFromLog = Object.values(byDate).reduce((s, v) => s + v, 0);
     const avgSeconds = workingDaysCount > 0 ? totalFromLog / workingDaysCount : 0;
     if (projectAvg) projectAvg.textContent = formatHoursMinutesFromSeconds(avgSeconds);
+
+    // Total distinct days worked on this project (unique days with log entries).
+    // Includes today if a focus session is currently running but not yet logged.
+    if (projectTotalDays) {
+        const daySet = new Set(Object.keys(byDate));
+        if (isRunning && elapsedTime > 0) {
+            daySet.add(todayIso);
+        }
+        projectTotalDays.textContent = String(daySet.size);
+    }
 }
 
 // ─── Time log ─────────────────────────────────────────────────────────────
