@@ -300,12 +300,29 @@ function updateTimerStats() {
 
     // Total distinct days worked on this project (unique days with log entries).
     // Includes today if a focus session is currently running but not yet logged.
+    // Displayed as "workedDays / elapsedDaysSinceStart".
     if (projectTotalDays) {
         const daySet = new Set(Object.keys(byDate));
         if (isRunning && elapsedTime > 0) {
             daySet.add(todayIso);
         }
-        projectTotalDays.textContent = String(daySet.size);
+
+        const workedDays = daySet.size;
+
+        // Elapsed days since project start (inclusive of both start day and today)
+        let elapsedDays = workedDays; // fallback if startDate is missing/invalid
+        if (currentProject.startDate) {
+            const start = new Date(currentProject.startDate + 'T00:00:00');
+            const today = new Date(todayIso + 'T00:00:00');
+            if (!isNaN(start.getTime())) {
+                const diffMs = today - start;
+                elapsedDays = Math.floor(diffMs / 86400000) + 1; // +1 to include the start day
+                // Guard against a start date in the future
+                if (elapsedDays < 1) elapsedDays = 1;
+            }
+        }
+
+        projectTotalDays.textContent = `${workedDays}/${elapsedDays}`;
     }
 }
 
